@@ -4,6 +4,9 @@ import React, { useCallback, useMemo } from 'react';
 import { Alert, Linking, Platform, View } from 'react-native';
 
 import { Divider, SettingsGroup, SettingsRow } from '@/components/SettingsRow';
+import { clearAllData, seedDemoData } from '@/dev/seedDatabase';
+import { useDb } from '@/hooks/useHabitData';
+import { useToday } from '@/hooks/useToday';
 import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
@@ -22,10 +25,13 @@ const THEME_LABELS: Record<ThemePreference, string> = {
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const db = useDb();
+  const today = useToday();
   const { spacing, preference, setPreference } = useTheme();
 
   const isPremium = usePremiumStore((s) => s.isPremium);
   const restore = usePremiumStore((s) => s.restore);
+  const loadHabits = useHabitsStore((s) => s.load);
   const activeCount = useHabitsStore(selectActiveHabits).length;
   const archivedCount = useHabitsStore(selectArchivedHabits).length;
 
@@ -68,6 +74,31 @@ export default function SettingsScreen() {
       },
     ]);
   }, []);
+
+  // Development-only helpers for dogfooding and store screenshots. `__DEV__`
+  // is statically false in a release build, so this is stripped by the bundler.
+  const handleSeed = useCallback(async () => {
+    try {
+      await seedDemoData(db, today);
+      await loadHabits(db);
+      Alert.alert('Seeded', 'Demo habits with synthetic history are in place.');
+    } catch (error) {
+      Alert.alert('Could not seed', (error as Error).message);
+    }
+  }, [db, loadHabits, today]);
+
+  const handleClear = useCallback(() => {
+    Alert.alert('Delete all data?', 'This wipes every habit and completion.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete everything',
+        style: 'destructive',
+        onPress: () => {
+          void clearAllData(db).then(() => loadHabits(db));
+        },
+      },
+    ]);
+  }, [db, loadHabits]);
 
   return (
     <Screen scroll contentContainerStyle={{ gap: spacing.xl, paddingTop: spacing.base }}>
@@ -158,6 +189,19 @@ export default function SettingsScreen() {
         <Divider />
         <SettingsRow icon="info" label="Version" value={version} />
       </SettingsGroup>
+
+      {__DEV__ ? (
+        <SettingsGroup title="Developer">
+          <SettingsRow
+            icon="database"
+            label="Seed demo data"
+            description="Synthetic history for screenshots and dogfooding."
+            onPress={() => void handleSeed()}
+          />
+          <Divider />
+          <SettingsRow icon="trash-2" label="Delete all data" destructive onPress={handleClear} />
+        </SettingsGroup>
+      ) : null}
     </Screen>
   );
 }

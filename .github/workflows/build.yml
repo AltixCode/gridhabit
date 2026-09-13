@@ -1,0 +1,80 @@
+name: EAS Build
+
+on:
+  # Internal builds on every push to main, for continuous dogfooding.
+  push:
+    branches: [main]
+  # Store builds are always a deliberate, human-triggered action.
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: EAS build profile
+        type: choice
+        options: [preview, production]
+        default: preview
+        required: true
+      platform:
+        description: Target platform
+        type: choice
+        options: [all, ios, android]
+        default: all
+        required: true
+      submit:
+        description: Submit to the stores after a successful build
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    name: Build (${{ github.event.inputs.profile || 'preview' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # A build consumes EAS credits and can publish to a store; never run it
+    # from a fork's pull request.
+    if: github.event_name == 'workflow_dispatch' || github.repository == github.event.repository.full_name
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.21.0
+          cache: npm
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: npm ci
+
+      - name: Typecheck and test before burning a build
+        run: |
+          npm run typecheck
+          npm run test:ci
+
+      - name: Write Google Play service account key
+        if: ${{ github.event.inputs.submit == 'true' }}
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$GOOGLE_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::GOOGLE_SERVICE_ACCOUNT_JSON secret is not set"; exit 1
+          fi
+          printf '%s' "$GOOGLE_SERVICE_ACCOUNT_JSON" > google-service-account.json
+
+      - name: EAS build
+        env:
+          EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
+          EXPO_OWNER: ${{ secrets.EXPO_OWNER }}
+          ADMOB_IOS_APP_ID: ${{ secrets.ADMOB_IOS_APP_ID }}
+          ADMOB_ANDROID_APP_ID: ${{ secrets.ADMOB_ANDROID_APP_ID }}
+        run: |
+          eas build \
+            --profile "${{ github.event.inputs.profile || 'preview' }}" \
+            --platform "${{ github.event.inputs.platform || 'all' }}" \
+            --non-interactive \
+            --no-wait
+
+      - name: Remove service account key
+        if: always()
+        run: rm -f google-service-account.json

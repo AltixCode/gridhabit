@@ -1,0 +1,57 @@
+name: EAS Submit
+
+# Submission is always explicit: it pushes a binary to App Store Connect and
+# Google Play, which cannot be undone by re-running a workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Store to submit to
+        type: choice
+        options: [all, ios, android]
+        default: all
+        required: true
+
+jobs:
+  submit:
+    name: Submit latest production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: store-release
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.21.0
+          cache: npm
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: npm ci
+
+      - name: Write Google Play service account key
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: printf '%s' "$GOOGLE_SERVICE_ACCOUNT_JSON" > google-service-account.json
+
+      - name: Submit
+        env:
+          EAS_PROJECT_ID: ${{ secrets.EAS_PROJECT_ID }}
+          EXPO_OWNER: ${{ secrets.EXPO_OWNER }}
+          ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.EXPO_APPLE_APP_SPECIFIC_PASSWORD }}
+        run: |
+          eas submit \
+            --profile production \
+            --platform "${{ github.event.inputs.platform }}" \
+            --latest \
+            --non-interactive
+
+      - name: Remove service account key
+        if: always()
+        run: rm -f google-service-account.json

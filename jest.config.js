@@ -1,5 +1,8 @@
 module.exports = {
   preset: 'jest-expo',
+  // Reanimated 4 runs on react-native-worklets, whose `.native.ts` entry points
+  // reach for the JSI. This resolver picks the non-native build under Jest.
+  resolver: 'react-native-worklets/jest/resolver.js',
   testMatch: ['**/*.test.ts', '**/*.test.tsx'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   transformIgnorePatterns: [
