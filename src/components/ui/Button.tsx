@@ -8,7 +8,7 @@ import {
   type PressableProps,
   type ViewStyle,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import Feather from '@expo/vector-icons/Feather';
 
 import { MIN_TOUCH_TARGET, readableTextOn, useTheme, withAlpha } from '@/theme';
 

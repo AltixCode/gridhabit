@@ -1,4 +1,3 @@
-import { Feather } from '@expo/vector-icons';
 import { SQLiteProvider } from 'expo-sqlite';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -96,6 +95,3 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
-
-// Keeps Feather's font warm so the first frame never flashes missing glyphs.
-void Feather.loadFont?.();

@@ -58,7 +58,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
     "doctor": "npx expo-doctor",
-    "assets": "node scripts/generate-assets.mjs"
+    "assets": "node scripts/generate-assets.mjs",
+    "bundle": "expo export --platform all --output-dir dist"
   },
   "private": true,
   "overrides": {

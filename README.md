@@ -100,6 +100,7 @@ user is not premium, so a paying user never sees an ad flash on cold start. See
 | `npm run doctor` | `expo-doctor` config and dependency validation |
 | `npm run prebuild` | Regenerate `ios/` and `android/` from config |
 | `npm run assets` | Regenerate every brand asset from the grid mark |
+| `npm run bundle` | Production Metro export for both platforms (CI runs this) |
 
 ## Release
 

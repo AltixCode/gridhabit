@@ -64,3 +64,31 @@ jobs:
         env:
           # Doctor only needs the config to resolve; real IDs are not required.
           EXPO_NO_TELEMETRY: '1'
+
+  bundle:
+    name: Production bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.21.0
+          cache: npm
+      - run: npm ci
+
+      # The closest thing to "does the app actually load" without a device: a
+      # real Metro production build resolves every import and every route, so a
+      # broken module path or a bad expo-router file cannot reach a build.
+      - name: Export iOS and Android bundles
+        run: npx expo export --platform all --output-dir dist
+        env:
+          APP_VARIANT: production
+          EXPO_NO_TELEMETRY: '1'
+
+      - name: Report bundle size
+        run: |
+          echo "### Bundle size" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          du -sh dist/_expo/static/js/* dist/assets >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
