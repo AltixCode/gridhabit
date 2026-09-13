@@ -75,6 +75,8 @@ CI runs the first three on every push; run `prebuild` locally after changing
 eas build --profile preview --platform all
 ```
 
+Or run the **EAS Build** workflow with `profile: preview`.
+
 Then, per the plan's section 6, **dogfood for at least a week of real daily
 use** before going wider. On a development build, open *Settings → Developer →
 Seed demo data* to load deterministic synthetic history — the grid only shows
@@ -114,7 +116,10 @@ Icon: 1024×1024 PNG, no alpha, no rounded corners (Apple applies the mask).
 eas build --profile production --platform all
 ```
 
-Or run the **EAS Build** workflow with `profile: production`. `autoIncrement`
+Or run the **EAS Build** workflow (Actions → EAS Build → *Run workflow*) with
+`profile: production`. The workflow is dispatch-only on purpose: a build costs
+EAS credits and a production build can be promoted to a store, so it is never a
+side effect of pushing. `autoIncrement`
 handles build numbers, and `appVersionSource: remote` means EAS owns the
 version — do not hand-edit `buildNumber`/`versionCode`.
 
