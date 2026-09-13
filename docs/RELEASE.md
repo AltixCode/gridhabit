@@ -1,0 +1,171 @@
+# Release runbook
+
+Everything needed to take GridHabit from this repository to a live listing on
+the App Store and Google Play. Work top to bottom; each phase is safe to pause.
+
+---
+
+## 0. One-time accounts and identifiers
+
+| Item | Where | Notes |
+|---|---|---|
+| Apple Developer Program | developer.apple.com | $99/year. Required before anything else. |
+| App Store Connect app record | appstoreconnect.apple.com | Bundle id `com.altixcode.gridhabit`. Note the **ASC App ID** (numeric). |
+| Apple Team ID | Membership page | 10 characters. |
+| Google Play Console | play.google.com/console | $25 one-time. Package `com.altixcode.gridhabit`. |
+| Play service account | Play Console → Setup → API access | Download JSON. **Never commit it.** |
+| RevenueCat project | app.revenuecat.com | See `REVENUECAT.md`. |
+| AdMob app + ad unit | apps.admob.com | See `ADMOB.md`. |
+| Expo account / EAS project | expo.dev | `eas init` writes the project id. |
+
+### GitHub secrets
+
+Set these in *Settings → Secrets and variables → Actions*:
+
+| Secret | Used by |
+|---|---|
+| `EXPO_TOKEN` | all EAS workflows |
+| `EAS_PROJECT_ID`, `EXPO_OWNER` | app config resolution |
+| `ADMOB_IOS_APP_ID`, `ADMOB_ANDROID_APP_ID` | native manifest injection at build |
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | Play submission (whole JSON file contents) |
+| `ASC_APP_ID`, `APPLE_TEAM_ID` | App Store submission |
+| `EXPO_APPLE_APP_SPECIFIC_PASSWORD` | App Store submission |
+
+Create a protected GitHub environment named **`store-release`** and require a
+manual reviewer on it. The submit workflow runs inside it.
+
+---
+
+## 1. Configure the environment
+
+```bash
+cp .env.example .env.local
+```
+
+Fill in the RevenueCat public keys and AdMob ad-unit ids. `EXPO_PUBLIC_*` values
+are embedded in the bundle and are public by design — only ever put publishable
+client keys there. Secrets (the Play service account, the Apple app-specific
+password) live in EAS/GitHub secrets and never in this repo.
+
+```bash
+eas init                 # writes the EAS project id
+eas secret:push --scope project --env-file .env.local
+```
+
+---
+
+## 2. Verify before building
+
+```bash
+npm ci
+npm run typecheck
+npm run test:ci
+npm run doctor          # must report 21/21
+npm run prebuild        # confirms plugins produce valid native projects
+```
+
+CI runs the first three on every push; run `prebuild` locally after changing
+`app.config.ts` or adding a native dependency.
+
+---
+
+## 3. Internal builds and dogfooding
+
+```bash
+eas build --profile preview --platform all
+```
+
+Then, per the plan's section 6, **dogfood for at least a week of real daily
+use** before going wider. On a development build, open *Settings → Developer →
+Seed demo data* to load deterministic synthetic history — the grid only shows
+its value once it is full, and an empty grid is also the worst possible
+screenshot.
+
+Distribute via TestFlight (iOS) and Play Internal Testing (Android).
+
+---
+
+## 4. Store assets
+
+Everything under `store/` is ready to paste into the console.
+
+- `store/listing.md` — name, subtitle, description, keywords, what's new
+- `store/privacy-answers.md` — App Privacy (Apple) and Data Safety (Play)
+- `store/screenshots.md` — the shot list and the exact device sizes required
+
+**The first screenshot is the single highest-leverage asset in this project.**
+It must show a habit's contribution grid densely populated with history. Capture
+it from a seeded build, never from a fresh install.
+
+Required sizes:
+
+| Store | Required |
+|---|---|
+| App Store | 6.9" (1290×2796) and 6.5" (1242×2688); iPad 13" only if you list iPad |
+| Play | Phone: 2–8 shots, min 1080px on the short side; plus a 1024×500 feature graphic |
+
+Icon: 1024×1024 PNG, no alpha, no rounded corners (Apple applies the mask).
+
+---
+
+## 5. Production build
+
+```bash
+eas build --profile production --platform all
+```
+
+Or run the **EAS Build** workflow with `profile: production`. `autoIncrement`
+handles build numbers, and `appVersionSource: remote` means EAS owns the
+version — do not hand-edit `buildNumber`/`versionCode`.
+
+To bump the marketing version, edit `version` in `app.config.ts` and commit.
+
+---
+
+## 6. Submit
+
+```bash
+eas submit --profile production --platform all --latest
+```
+
+Or run the **EAS Submit** workflow (dispatch-only, gated on the `store-release`
+environment). Android goes to the `internal` track as a **draft** first; promote
+it in the Play Console once you have verified the build.
+
+---
+
+## 7. Pre-submission checklist
+
+Review rejections on an app like this almost always come from this list.
+
+- [ ] **Restore Purchases** is visible and works on a *fresh install* — Apple
+      tests this explicitly, and a missing restore button is a common rejection.
+- [ ] The paywall shows price, billing period and the auto-renew disclosure for
+      subscriptions, plus links to Terms and Privacy.
+- [ ] Privacy policy and Terms URLs are live and reachable (not 404).
+      Update `PRIVACY_POLICY_URL` / `TERMS_URL` in `src/monetization/config.ts`
+      if you host them elsewhere; publish `docs/PRIVACY.md` at that URL.
+- [ ] App Privacy / Data Safety answers match reality — the AdMob SDK collects
+      device identifiers, so "Data used to track you" is **Yes** on iOS.
+- [ ] `NSUserTrackingUsageDescription` is present and the ATT prompt appears
+      before any personalised ad request on iOS 14.5+.
+- [ ] Ads never appear for an entitled user. Verify by purchasing in sandbox.
+- [ ] Ads are not adjacent to interactive controls in a way that invites
+      accidental taps (AdMob policy) — the banner sits below content, anchored.
+- [ ] Age rating completed: 4+ / Everyone, with "Contains ads" declared on Play.
+- [ ] Notification permission is requested in context (when enabling a
+      reminder), never on first launch.
+- [ ] Tested on the smallest supported screen (iPhone SE, ~375pt) and at the
+      largest accessibility text size.
+- [ ] Zero uncaught console errors in a release build.
+
+---
+
+## 8. Post-launch
+
+- Watch RevenueCat charts for free→paid conversion before investing in the P2
+  items (cloud sync, widgets, export).
+- Per the plan's distribution section: Product Hunt on a Tue–Thu, then pitch
+  15–20 mid-tier productivity creators, then habit-tracker roundup posts.
+- Keep an eye on OS releases; home-screen widgets in particular tend to need
+  maintenance across major OS bumps.
