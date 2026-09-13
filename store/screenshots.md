@@ -37,8 +37,17 @@ xcrun simctl io booted screenshot shot-1.png
 | Play | Phone 1080×1920 or larger, 2–8 shots |
 | Play | Feature graphic 1024×500 (no screenshot content, just the grid motif + name) |
 
-Icon: 1024×1024 PNG, **no alpha channel, no rounded corners** — Apple applies
-the mask and rejects pre-rounded icons.
+Icon and feature graphic are generated, not drawn by hand:
+
+```bash
+npm run assets
+```
+
+That writes `assets/icon.png` (1024×1024, **no alpha channel** — Apple rejects a
+store icon that has one), the Android adaptive and monochrome layers, the splash
+mark, and `store/feature-graphic.png` (1024×500). All of them are the same
+contribution-grid mark, so the identity is consistent from the launcher to the
+store page. Re-run after changing the palette in `src/theme/tokens.ts`.
 
 ## Style
 

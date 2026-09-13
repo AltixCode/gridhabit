@@ -49,7 +49,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     supportsTablet: true,
     // Every build must carry a build number; EAS `autoIncrement` manages it.
     buildNumber: '1',
-    config: { usesNonExemptEncryption: false },
     infoPlist: {
       // Shown in the App Tracking Transparency prompt. Required by Apple
       // whenever the IDFA is requested for ad personalisation.

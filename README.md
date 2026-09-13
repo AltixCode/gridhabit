@@ -53,6 +53,7 @@ src/
   theme/                  design tokens, palettes, colour maths
   components/             UI, including ContributionGrid (the hook)
   dev/                    deterministic demo-data seeding
+  export/                 CSV / JSON serializers and the share sheet
 ```
 
 ### Two rules the codebase is built around
@@ -78,6 +79,7 @@ database tests run against real SQL via `node:sqlite`.
 | Ads | One anchored banner | None |
 | Themes / colours | All | All |
 | Export | — | CSV / JSON |
+| Future features | — | Included |
 
 Pro is sold through RevenueCat as a lifetime purchase (listed first, marked
 *Best value*) alongside yearly and monthly subscriptions. The single entitlement
@@ -97,6 +99,7 @@ user is not premium, so a paying user never sees an ad flash on cold start. See
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run doctor` | `expo-doctor` config and dependency validation |
 | `npm run prebuild` | Regenerate `ios/` and `android/` from config |
+| `npm run assets` | Regenerate every brand asset from the grid mark |
 
 ## Release
 
