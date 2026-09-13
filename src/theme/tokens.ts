@@ -51,7 +51,7 @@ export const fontFamily = Platform.select({
 export const typography = {
   display: { fontSize: 34, lineHeight: 40, fontWeight: '700', letterSpacing: -0.8 },
   title: { fontSize: 26, lineHeight: 32, fontWeight: '700', letterSpacing: -0.5 },
-  heading: { fontSize: 20, lineHeight: 26, fontWeight: '650', letterSpacing: -0.3 },
+  heading: { fontSize: 20, lineHeight: 26, fontWeight: '600', letterSpacing: -0.3 },
   body: { fontSize: 16, lineHeight: 24, fontWeight: '400', letterSpacing: -0.1 },
   bodyStrong: { fontSize: 16, lineHeight: 24, fontWeight: '600', letterSpacing: -0.1 },
   callout: { fontSize: 15, lineHeight: 21, fontWeight: '500', letterSpacing: -0.1 },

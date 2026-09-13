@@ -11,6 +11,7 @@ import {
   isCompleted,
   listCompletionDates,
   listCompletionDatesForHabits,
+  listAllCompletionDates,
   listHabits,
   reorderHabits,
   setCompletion,
@@ -356,5 +357,33 @@ describe('listCompletionDatesForHabits', () => {
     expect(map.size).toBe(0);
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
+  });
+});
+
+describe('listAllCompletionDates', () => {
+  it('groups every completion by habit in one query', async () => {
+    const a = await createHabit(db, base);
+    const b = await createHabit(db, { ...base, name: 'Read' });
+    await setCompletion(db, a.id, '2026-09-11', true);
+    await setCompletion(db, a.id, '2026-09-10', true);
+    await setCompletion(db, b.id, '2026-09-10', true);
+
+    const spy = jest.spyOn(db, 'getAllAsync');
+    const map = await listAllCompletionDates(db);
+    expect(spy).toHaveBeenCalledTimes(1);
+    spy.mockRestore();
+
+    expect(map.get(a.id)).toEqual(['2026-09-10', '2026-09-11']);
+    expect(map.get(b.id)).toEqual(['2026-09-10']);
+  });
+
+  it('omits habits with no completions', async () => {
+    const a = await createHabit(db, base);
+    const map = await listAllCompletionDates(db);
+    expect(map.has(a.id)).toBe(false);
+  });
+
+  it('is empty for a fresh database', async () => {
+    await expect(listAllCompletionDates(db)).resolves.toEqual(new Map());
   });
 });

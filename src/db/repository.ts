@@ -298,3 +298,26 @@ export async function listCompletionDatesForHabits(
   }
   return result;
 }
+
+/**
+ * Every completion in the database, grouped by habit.
+ *
+ * A habit tracker's dataset is small by nature — a five-year power user with
+ * twenty habits is still well under 40k rows — and the longest-streak stat
+ * genuinely needs full history. One indexed scan beats windowed paging plus a
+ * second query when the detail screen is opened.
+ */
+export async function listAllCompletionDates(
+  db: SqlDriver,
+): Promise<Map<string, DateKey[]>> {
+  const rows = await db.getAllAsync<{ habit_id: string; date: string }>(
+    'SELECT habit_id, date FROM completions ORDER BY habit_id ASC, date ASC',
+  );
+  const result = new Map<string, DateKey[]>();
+  for (const row of rows) {
+    const list = result.get(row.habit_id);
+    if (list) list.push(row.date);
+    else result.set(row.habit_id, [row.date]);
+  }
+  return result;
+}

@@ -1,5 +1,5 @@
 import type { Frequency } from '../frequency';
-import { buildContributionGrid, gridMonthLabels } from '../grid';
+import { buildContributionGrid, gridMonthLabels, intensityForRun } from '../grid';
 
 const daily: Frequency = { type: 'daily' };
 const mwf: Frequency = { type: 'custom', days: [1, 3, 5] };
@@ -129,5 +129,63 @@ describe('gridMonthLabels', () => {
     const named = labels.filter((l) => l !== '');
     expect(named.length).toBeGreaterThan(2);
     expect(new Set(named).size).toBe(named.length);
+  });
+});
+
+describe('intensityForRun', () => {
+  it('is 0 for no run', () => {
+    expect(intensityForRun(0)).toBe(0);
+    expect(intensityForRun(-3)).toBe(0);
+  });
+
+  it('increases monotonically with run length and tops out at 1', () => {
+    const values = [1, 2, 3, 4, 6, 7, 30].map(intensityForRun);
+    for (let i = 1; i < values.length; i += 1) {
+      expect(values[i]!).toBeGreaterThanOrEqual(values[i - 1]!);
+    }
+    expect(values[values.length - 1]).toBe(1);
+  });
+
+  it('never renders a completed day as invisible', () => {
+    expect(intensityForRun(1)).toBeGreaterThan(0.3);
+  });
+});
+
+describe('grid intensity', () => {
+  const opts2 = { today: '2026-09-16', createdAt: '2020-01-01', frequency: daily };
+
+  it('gives an isolated completion the lowest non-zero intensity', () => {
+    const grid = buildContributionGrid(['2026-09-16'], { ...opts2, weeks: 2 });
+    const cell = grid.flat().find((c) => c.date === '2026-09-16')!;
+    expect(cell.intensity).toBe(intensityForRun(1));
+  });
+
+  it('ramps intensity along a run', () => {
+    const dates = ['2026-09-13', '2026-09-14', '2026-09-15', '2026-09-16'];
+    const grid = buildContributionGrid(dates, { ...opts2, weeks: 2 });
+    const flat = grid.flat();
+    expect(flat.find((c) => c.date === '2026-09-13')!.intensity).toBe(intensityForRun(1));
+    expect(flat.find((c) => c.date === '2026-09-16')!.intensity).toBe(intensityForRun(4));
+  });
+
+  it('counts a run that started before the visible window', () => {
+    // Completions run daily from well before the 2-week window opens.
+    const dates: string[] = [];
+    let d = '2026-08-01';
+    while (d <= '2026-09-16') {
+      dates.push(d);
+      const dt = new Date(`${d}T12:00:00`);
+      dt.setDate(dt.getDate() + 1);
+      d = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    }
+    const grid = buildContributionGrid(dates, { ...opts2, weeks: 2 });
+    const first = grid[0]![0]!;
+    expect(first.completed).toBe(true);
+    expect(first.intensity).toBe(1);
+  });
+
+  it('leaves uncompleted cells at 0', () => {
+    const grid = buildContributionGrid([], { ...opts2, weeks: 2 });
+    expect(grid.flat().every((c) => c.intensity === 0)).toBe(true);
   });
 });

@@ -26,6 +26,12 @@ export interface GridCell {
   isBeforeStart: boolean;
   /** In range, in the past, due, and not completed. */
   isMissed: boolean;
+  /**
+   * 0…1 fill strength for a completed cell, derived from how long the run of
+   * consecutive completions ending on this day is. Momentum becomes visible:
+   * a long streak reads as a solid block, a scattered week as pale specks.
+   */
+  intensity: number;
 }
 
 export interface GridOptions {
@@ -83,13 +89,47 @@ export function buildContributionGrid(
         isFuture,
         isBeforeStart,
         isMissed: isDue && !completed && !isFuture && !isToday && !isBeforeStart,
+        intensity: 0,
       });
     }
     grid.push(column);
     columnStart = addDays(columnStart, 7);
   }
 
-  return grid;
+  return applyIntensity(grid, done);
+}
+
+/** Fill strength for a run of `length` consecutive completions. */
+export function intensityForRun(length: number): number {
+  if (length <= 0) return 0;
+  if (length === 1) return 0.45;
+  if (length <= 3) return 0.65;
+  if (length <= 6) return 0.82;
+  return 1;
+}
+
+/**
+ * Assigns each completed cell an intensity from the length of the completion
+ * run ending on that day. The run is measured against the full completion set,
+ * not just the visible window, so the leftmost column of a 52-week grid is not
+ * artificially dimmed.
+ */
+export function applyIntensity(
+  grid: ContributionGrid,
+  completions: ReadonlySet<DateKey>,
+): ContributionGrid {
+  return grid.map((column) =>
+    column.map((cell) => {
+      if (!cell.completed) return cell;
+      let run = 0;
+      let cursor = cell.date;
+      while (completions.has(cursor)) {
+        run += 1;
+        cursor = addDays(cursor, -1);
+      }
+      return { ...cell, intensity: intensityForRun(run) };
+    }),
+  );
 }
 
 /**
