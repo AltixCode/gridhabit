@@ -35,13 +35,17 @@ jobs:
       - name: Unit tests
         run: npm run test:ci
 
-      - name: Upload coverage
-        if: always()
+      # Only on failure — that is when the report is worth reading — and never
+      # blocking: an artifact storage quota is not a reason to fail a green
+      # test run.
+      - name: Upload coverage report
+        if: failure()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: coverage
-          path: coverage/
-          retention-days: 7
+          path: coverage/lcov-report
+          retention-days: 3
           if-no-files-found: ignore
 
   expo-doctor:
