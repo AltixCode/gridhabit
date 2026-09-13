@@ -80,8 +80,12 @@ jobs:
       # The closest thing to "does the app actually load" without a device: a
       # real Metro production build resolves every import and every route, so a
       # broken module path or a bad expo-router file cannot reach a build.
+      # Exported per platform: `--platform all` would include web, which this
+      # app does not target and has no react-native-web dependency for.
       - name: Export iOS and Android bundles
-        run: npx expo export --platform all --output-dir dist
+        run: |
+          npx expo export --platform ios --output-dir dist/ios
+          npx expo export --platform android --output-dir dist/android
         env:
           APP_VARIANT: production
           EXPO_NO_TELEMETRY: '1'
@@ -90,5 +94,6 @@ jobs:
         run: |
           echo "### Bundle size" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-          du -sh dist/_expo/static/js/* dist/assets >> "$GITHUB_STEP_SUMMARY"
+          du -sh dist/ios/_expo/static/js/* dist/ios/assets >> "$GITHUB_STEP_SUMMARY"
+          du -sh dist/android/_expo/static/js/* dist/android/assets >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
