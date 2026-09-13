@@ -29,9 +29,10 @@ jobs:
     name: Build (${{ github.event.inputs.profile || 'preview' }})
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    # A build consumes EAS credits and can publish to a store; never run it
-    # from a fork's pull request.
-    if: github.event_name == 'workflow_dispatch' || github.repository == github.event.repository.full_name
+    # A build consumes EAS credits and can publish to a store, so it only runs
+    # once EAS is actually wired up. Without EXPO_TOKEN the job is skipped
+    # rather than failing, which keeps a fresh clone's CI green.
+    if: ${{ secrets.EXPO_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
 
