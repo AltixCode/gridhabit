@@ -130,7 +130,7 @@ export function summarizePlan(plan: PlanLike, monthlyBaseline?: PlanLike): PlanS
   };
 }
 
-const PLAN_RANK: Array<(plan: PlanLike) => boolean> = [
+const PLAN_RANK: ((plan: PlanLike) => boolean)[] = [
   (p) => isLifetimeIdentifier(p.identifier),
   (p) => isAnnualIdentifier(p.identifier, p.periodUnit),
   (p) => isMonthlyIdentifier(p.identifier, p.periodUnit),

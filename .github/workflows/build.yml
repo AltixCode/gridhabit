@@ -47,8 +47,9 @@ jobs:
 
       - run: npm ci
 
-      - name: Typecheck and test before burning a build
+      - name: Lint, typecheck and test before burning a build
         run: |
+          npm run lint
           npm run typecheck
           npm run test:ci
 

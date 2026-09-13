@@ -64,10 +64,12 @@ export function HabitForm({ initial, submitLabel, onSubmit, busy = false }: Habi
   const [touched, setTouched] = useState(false);
 
   const error = useMemo(() => {
+    // Deselecting every weekday is an explicit action, so explain it straight
+    // away rather than leaving the user with a silently disabled button.
+    if (isNeverDue(frequency)) return 'Pick at least one day.';
     if (!touched) return null;
     if (name.trim().length === 0) return 'Give your habit a name.';
     if (name.trim().length > 60) return 'Keep the name under 60 characters.';
-    if (isNeverDue(frequency)) return 'Pick at least one day.';
     return null;
   }, [name, frequency, touched]);
 

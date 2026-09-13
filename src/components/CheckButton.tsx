@@ -45,11 +45,13 @@ export function CheckButton({
   const fill = useSharedValue(completed ? 1 : 0);
 
   useEffect(() => {
-    fill.value = withTiming(completed ? 1 : 0, { duration: motion.fast });
+    // Reanimated 4's .set()/.get() accessors, rather than `.value =`, so the
+    // React Compiler does not see a mutation of a value it considers immutable.
+    fill.set(withTiming(completed ? 1 : 0, { duration: motion.fast }));
   }, [completed, fill]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: scale.get() }],
   }));
 
   const handlePress = () => {
@@ -59,9 +61,11 @@ export function CheckButton({
         : Haptics.NotificationFeedbackType.Success,
     );
     if (!completed) {
-      scale.value = withSequence(
-        withTiming(0.88, { duration: motion.instant }),
-        withSpring(1, motion.springBouncy),
+      scale.set(
+        withSequence(
+          withTiming(0.88, { duration: motion.instant }),
+          withSpring(1, motion.springBouncy),
+        ),
       );
     }
     onToggle();

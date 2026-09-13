@@ -55,7 +55,7 @@ export function useToday(): DateKey {
     return () => {
       cancelled = true;
       if (timer.current) clearTimeout(timer.current);
-      subscription.remove();
+      subscription?.remove?.();
     };
   }, []);
 

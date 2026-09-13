@@ -10,7 +10,7 @@ import { HABIT_COLORS, MIN_TOUCH_TARGET, readableTextOn, useTheme, withAlpha } f
 import { Text } from './ui/Text';
 
 /** Curated Feather glyphs that read clearly at 15pt. No emoji — ever. */
-export const HABIT_ICONS: Array<keyof typeof Feather.glyphMap> = [
+export const HABIT_ICONS: (keyof typeof Feather.glyphMap)[] = [
   'activity', 'book-open', 'coffee', 'droplet', 'edit-3', 'feather',
   'heart', 'home', 'moon', 'music', 'sun', 'target',
   'trending-up', 'umbrella', 'watch', 'wind', 'zap', 'smile',
@@ -143,7 +143,7 @@ export function FrequencyPicker({
     onChange({ type: 'weekly', timesPerWeek: times });
   };
 
-  const options: Array<{ kind: FrequencyKind; label: string }> = [
+  const options: { kind: FrequencyKind; label: string }[] = [
     { kind: 'daily', label: 'Daily' },
     { kind: 'weekly', label: 'Times a week' },
     { kind: 'custom', label: 'Specific days' },

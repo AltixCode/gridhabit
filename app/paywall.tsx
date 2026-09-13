@@ -20,7 +20,7 @@ import { toPlanLike } from '@/monetization/purchases';
 import { usePremiumStore } from '@/store/usePremiumStore';
 import { useTheme, withAlpha } from '@/theme';
 
-const BENEFITS: Array<{ icon: keyof typeof Feather.glyphMap; title: string; body: string }> = [
+const BENEFITS: { icon: keyof typeof Feather.glyphMap; title: string; body: string }[] = [
   {
     icon: 'zap-off',
     title: 'No ads, ever',
@@ -63,10 +63,6 @@ export default function PaywallScreen() {
   }, [refreshOfferings]);
 
   useEffect(() => {
-    if (!selectedId && packages.length > 0) setSelectedId(packages[0]!.identifier);
-  }, [packages, selectedId]);
-
-  useEffect(() => {
     if (isPremium) router.back();
   }, [isPremium, router]);
 
@@ -75,6 +71,8 @@ export default function PaywallScreen() {
     [packages],
   );
 
+  // The selection is derived rather than stored with a default: until the user
+  // picks, the first (best-value) plan is the one that is active.
   const selected = packages.find((p) => p.identifier === selectedId) ?? packages[0] ?? null;
 
   const handlePurchase = useCallback(async () => {
