@@ -32,9 +32,9 @@ const BENEFITS: { icon: keyof typeof Feather.glyphMap; title: string; body: stri
     body: `Go past the ${FREE_HABIT_LIMIT}-habit free limit.`,
   },
   {
-    icon: 'droplet',
-    title: 'Every colour and theme',
-    body: 'Make the grid yours.',
+    icon: 'gift',
+    title: 'Every future feature',
+    body: 'Buy it once and new features arrive included.',
   },
   {
     icon: 'download',

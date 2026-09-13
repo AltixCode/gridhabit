@@ -47,7 +47,7 @@ export function paywallReasonFor(reason: PaywallReason): string {
     case 'remove-ads':
       return 'Remove ads and keep GridHabit completely distraction-free.';
     case 'themes':
-      return 'Unlock every theme and grid style.';
+      return 'Unlock everything, including every feature added later.';
     case 'export':
       return 'Export your full history as CSV or JSON.';
     case 'generic':

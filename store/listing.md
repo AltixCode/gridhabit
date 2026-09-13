@@ -54,8 +54,9 @@ servers. We cannot read your habits because we never receive them.
 
 FREE AND PRO
 Free: up to four habits, with a single small banner ad.
-GridHabit Pro: unlimited habits, no ads ever, every colour and theme, and data
-export. Available as a one-time lifetime purchase — buy it once and it is yours.
+GridHabit Pro: unlimited habits, no ads ever, and data export. Available as a
+one-time lifetime purchase — buy it once and it is yours, including whatever we
+add next.
 A yearly and monthly option is available if you prefer.
 
 Designed for people who have tried the other habit trackers and wanted something

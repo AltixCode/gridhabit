@@ -5,6 +5,10 @@ module.exports = {
   resolver: 'react-native-worklets/jest/resolver.js',
   testMatch: ['**/*.test.ts', '**/*.test.tsx'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  // The first render in a suite pays for Babel-transforming React Native and
+  // the icon font. On a cold cache — which is every CI run — that can exceed
+  // Jest's 5s default and fail a test that is not actually slow.
+  testTimeout: 30_000,
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg|react-native-purchases|react-native-google-mobile-ads)',
   ],

@@ -26,8 +26,7 @@ yearly subscription.
 - Prices may change for future purchases; an existing lifetime purchase is not
   affected.
 
-Pro unlocks unlimited habits, removes advertising, and enables all themes and
-data export.
+Pro unlocks unlimited habits, removes advertising, and enables data export.
 
 ## Your data
 

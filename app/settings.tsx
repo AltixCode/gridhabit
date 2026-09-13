@@ -1,10 +1,12 @@
 import * as Application from 'expo-application';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, Linking, Platform, View } from 'react-native';
 
 import { Divider, SettingsGroup, SettingsRow } from '@/components/SettingsRow';
 import { clearAllData, seedDemoData } from '@/dev/seedDatabase';
+import { shareExport } from '@/export/shareExport';
+import type { ExportFormat } from '@/export/serialize';
 import { useDb } from '@/hooks/useHabitData';
 import { useToday } from '@/hooks/useToday';
 import { Card } from '@/components/ui/Card';
@@ -32,6 +34,7 @@ export default function SettingsScreen() {
   const isPremium = usePremiumStore((s) => s.isPremium);
   const restore = usePremiumStore((s) => s.restore);
   const loadHabits = useHabitsStore((s) => s.load);
+  const [exporting, setExporting] = useState<ExportFormat | null>(null);
   const activeCount = useHabitsStore(selectActiveHabits).length;
   const archivedCount = useHabitsStore(selectArchivedHabits).length;
 
@@ -48,6 +51,27 @@ export default function SettingsScreen() {
     const next = order[(order.indexOf(preference) + 1) % order.length]!;
     setPreference(next);
   }, [preference, setPreference]);
+
+  const handleExport = useCallback(
+    async (format: ExportFormat) => {
+      if (!isPremium) {
+        router.push({ pathname: '/paywall', params: { reason: 'export' } });
+        return;
+      }
+      setExporting(format);
+      const result = await shareExport(db, format, today);
+      setExporting(null);
+
+      if (result.status === 'empty') {
+        Alert.alert('Nothing to export', 'Add a habit first.');
+      } else if (result.status === 'unavailable') {
+        Alert.alert('Sharing unavailable', 'This device cannot share files.');
+      } else if (result.status === 'error') {
+        Alert.alert('Export failed', result.message);
+      }
+    },
+    [db, isPremium, router, today],
+  );
 
   const handleRestore = useCallback(async () => {
     const status = await restore();
@@ -107,8 +131,8 @@ export default function SettingsScreen() {
           <View style={{ gap: spacing.sm }}>
             <Text variant="heading">Go Pro, once</Text>
             <Text variant="callout" tone="muted">
-              Remove ads for good, unlock unlimited habits and every theme with a single
-              one-time payment.
+              Remove ads for good, unlock unlimited habits and data export with a
+              single one-time payment.
             </Text>
             <Text variant="caption" tone="faint">
               {slots === 0
@@ -154,6 +178,26 @@ export default function SettingsScreen() {
           icon="bell-off"
           label="Turn off all reminders"
           onPress={handleDisableAllReminders}
+        />
+      </SettingsGroup>
+
+      <SettingsGroup title="Your data">
+        <SettingsRow
+          icon="file-text"
+          label="Export as CSV"
+          description="Opens in any spreadsheet."
+          value={exporting === 'csv' ? 'Preparing…' : isPremium ? undefined : 'Pro'}
+          onPress={() => void handleExport('csv')}
+          disabled={exporting !== null}
+        />
+        <Divider />
+        <SettingsRow
+          icon="code"
+          label="Export as JSON"
+          description="Complete history, including archived habits."
+          value={exporting === 'json' ? 'Preparing…' : isPremium ? undefined : 'Pro'}
+          onPress={() => void handleExport('json')}
+          disabled={exporting !== null}
         />
       </SettingsGroup>
 

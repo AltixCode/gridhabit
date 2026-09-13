@@ -76,7 +76,7 @@ database tests run against real SQL via `node:sqlite`.
 |---|---|---|
 | Habits | 4 | Unlimited |
 | Ads | One anchored banner | None |
-| Themes / colours | Core set | All |
+| Themes / colours | All | All |
 | Export | — | CSV / JSON |
 
 Pro is sold through RevenueCat as a lifetime purchase (listed first, marked
