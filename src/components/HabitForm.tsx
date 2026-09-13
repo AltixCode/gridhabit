@@ -144,11 +144,12 @@ export function HabitForm({ initial, submitLabel, onSubmit, busy = false }: Habi
                 value={reminderDate(reminderTime)}
                 mode="time"
                 display={Platform.OS === 'ios' ? 'compact' : 'default'}
-                onChange={(event, date) => {
+                onValueChange={(_event, date) => {
                   if (Platform.OS === 'android') setShowTimePicker(false);
-                  if (event.type === 'dismissed' || !date) return;
+                  if (!date) return;
                   setReminderTime(formatReminderTime(date.getHours(), date.getMinutes()));
                 }}
+                onDismiss={() => setShowTimePicker(false)}
               />
             </View>
           ) : (
