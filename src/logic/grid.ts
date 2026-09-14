@@ -147,12 +147,3 @@ export function gridMonthLabels(grid: ContributionGrid): string[] {
     return MONTH_LABELS[month] ?? '';
   });
 }
-
-/** Total number of completed cells currently visible in the grid. */
-export function countCompletedCells(grid: ContributionGrid): number {
-  let total = 0;
-  for (const column of grid) {
-    for (const cell of column) if (cell.completed) total += 1;
-  }
-  return total;
-}

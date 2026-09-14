@@ -136,9 +136,3 @@ export function formatDateKeyLong(key: DateKey): string {
   const date = parseDateKey(key);
   return `${WEEKDAY_LABELS[date.getDay()]}, ${MONTH_LABELS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 }
-
-/** A short label such as `Sep 13`. */
-export function formatDateKeyShort(key: DateKey): string {
-  const date = parseDateKey(key);
-  return `${MONTH_LABELS[date.getMonth()]} ${date.getDate()}`;
-}

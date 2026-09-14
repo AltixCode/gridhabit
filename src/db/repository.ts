@@ -222,29 +222,6 @@ export async function setCompletion(
   return true;
 }
 
-/** Flips a day's completion state and returns the new state. */
-export async function toggleCompletion(
-  db: SqlDriver,
-  habitId: string,
-  date: DateKey,
-  now: Date = new Date(),
-): Promise<boolean> {
-  const current = await isCompleted(db, habitId, date);
-  return setCompletion(db, habitId, date, !current, now);
-}
-
-export async function isCompleted(
-  db: SqlDriver,
-  habitId: string,
-  date: DateKey,
-): Promise<boolean> {
-  const row = await db.getFirstAsync<{ id: string }>(
-    'SELECT id FROM completions WHERE habit_id = ? AND date = ?',
-    [habitId, date],
-  );
-  return row !== null;
-}
-
 export async function listCompletionDates(
   db: SqlDriver,
   habitId: string,
@@ -266,37 +243,6 @@ export async function listCompletionDates(
     params,
   );
   return rows.map((r) => r.date);
-}
-
-/**
- * Loads completions for many habits in a SINGLE query.
- *
- * The home screen renders a mini grid per habit; fetching per habit would be a
- * textbook N+1 that grows with the user's habit count. One indexed range scan
- * over `(habit_id, date)` serves the whole list instead.
- */
-export async function listCompletionDatesForHabits(
-  db: SqlDriver,
-  habitIds: readonly string[],
-  from: DateKey,
-  to: DateKey,
-): Promise<Map<string, DateKey[]>> {
-  const result = new Map<string, DateKey[]>();
-  if (habitIds.length === 0) return result;
-  for (const id of habitIds) result.set(id, []);
-
-  const placeholders = habitIds.map(() => '?').join(', ');
-  const rows = await db.getAllAsync<{ habit_id: string; date: string }>(
-    `SELECT habit_id, date FROM completions
-     WHERE habit_id IN (${placeholders}) AND date >= ? AND date <= ?
-     ORDER BY habit_id ASC, date ASC`,
-    [...habitIds, from, to],
-  );
-
-  for (const row of rows) {
-    result.get(row.habit_id)?.push(row.date);
-  }
-  return result;
 }
 
 /**

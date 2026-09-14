@@ -8,14 +8,11 @@ import {
   createHabit,
   deleteHabit,
   getHabit,
-  isCompleted,
   listCompletionDates,
-  listCompletionDatesForHabits,
   listAllCompletionDates,
   listHabits,
   reorderHabits,
   setCompletion,
-  toggleCompletion,
   unarchiveHabit,
   updateHabit,
 } from '../repository';
@@ -254,8 +251,7 @@ describe('completions', () => {
   it('marks a day complete and reports it', async () => {
     const habit = await createHabit(db, base);
     await setCompletion(db, habit.id, '2026-09-10', true);
-    expect(await isCompleted(db, habit.id, '2026-09-10')).toBe(true);
-    expect(await isCompleted(db, habit.id, '2026-09-11')).toBe(false);
+    expect(await listCompletionDates(db, habit.id)).toEqual(['2026-09-10']);
   });
 
   it('is idempotent — completing the same day twice stores one row', async () => {
@@ -275,13 +271,6 @@ describe('completions', () => {
   it('un-completing a day that was never completed is a no-op', async () => {
     const habit = await createHabit(db, base);
     await expect(setCompletion(db, habit.id, '2026-09-10', false)).resolves.toBe(false);
-  });
-
-  it('toggleCompletion flips state and returns the new value', async () => {
-    const habit = await createHabit(db, base);
-    expect(await toggleCompletion(db, habit.id, '2026-09-10')).toBe(true);
-    expect(await toggleCompletion(db, habit.id, '2026-09-10')).toBe(false);
-    expect(await toggleCompletion(db, habit.id, '2026-09-10')).toBe(true);
   });
 
   it('rejects a non-local-date completion key', async () => {
@@ -325,38 +314,6 @@ describe('completions', () => {
     const b = await createHabit(db, { ...base, name: 'Read' });
     await setCompletion(db, a.id, '2026-09-10', true);
     expect(await listCompletionDates(db, b.id)).toEqual([]);
-  });
-});
-
-describe('listCompletionDatesForHabits', () => {
-  it('loads every habit in ONE query — no N+1 on the home screen', async () => {
-    const a = await createHabit(db, base);
-    const b = await createHabit(db, { ...base, name: 'Read' });
-    await setCompletion(db, a.id, '2026-09-10', true);
-    await setCompletion(db, a.id, '2026-09-11', true);
-    await setCompletion(db, b.id, '2026-09-11', true);
-
-    const spy = jest.spyOn(db, 'getAllAsync');
-    const map = await listCompletionDatesForHabits(db, [a.id, b.id], '2026-01-01', '2026-12-31');
-    expect(spy).toHaveBeenCalledTimes(1);
-    spy.mockRestore();
-
-    expect(map.get(a.id)).toEqual(['2026-09-10', '2026-09-11']);
-    expect(map.get(b.id)).toEqual(['2026-09-11']);
-  });
-
-  it('returns an entry for every requested habit, even with no completions', async () => {
-    const a = await createHabit(db, base);
-    const map = await listCompletionDatesForHabits(db, [a.id], '2026-01-01', '2026-12-31');
-    expect(map.get(a.id)).toEqual([]);
-  });
-
-  it('returns an empty map and issues no query for an empty id list', async () => {
-    const spy = jest.spyOn(db, 'getAllAsync');
-    const map = await listCompletionDatesForHabits(db, [], '2026-01-01', '2026-12-31');
-    expect(map.size).toBe(0);
-    expect(spy).not.toHaveBeenCalled();
-    spy.mockRestore();
   });
 });
 

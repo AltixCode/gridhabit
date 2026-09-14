@@ -39,11 +39,6 @@ export async function ensureAndroidChannel(): Promise<void> {
   });
 }
 
-export async function getPermissionStatus(): Promise<Notifications.PermissionStatus> {
-  const { status } = await Notifications.getPermissionsAsync();
-  return status;
-}
-
 /** Requests notification permission. Returns true when reminders may be scheduled. */
 export async function requestNotificationPermission(): Promise<boolean> {
   await ensureAndroidChannel();
