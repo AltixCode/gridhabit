@@ -5,7 +5,8 @@ import { Pressable, type PressableProps, type ViewStyle } from 'react-native';
 
 import { MIN_TOUCH_TARGET, useTheme, withAlpha } from '@/theme';
 
-export interface IconButtonProps extends Omit<PressableProps, 'style'> {
+export interface IconButtonProps extends Omit<PressableProps, 'style' | 'disabled'> {
+  disabled?: boolean;
   icon: keyof typeof Feather.glyphMap;
   /** Required: an icon-only control is invisible to a screen reader without it. */
   accessibilityLabel: string;
@@ -20,6 +21,7 @@ export function IconButton({
   size = 20,
   color,
   onPress,
+  disabled = false,
   style,
   ...rest
 }: IconButtonProps) {
@@ -38,6 +40,10 @@ export function IconButton({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      // Announced as disabled rather than silently ignoring the tap — a
+      // control that does nothing with no explanation is worse than none.
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={handlePress}
       hitSlop={8}
       android_ripple={{ color: withAlpha(tint, 0.12), borderless: true, radius: 24 }}
@@ -48,7 +54,7 @@ export function IconButton({
           alignItems: 'center',
           justifyContent: 'center',
           borderRadius: radius.full,
-          opacity: pressed ? 0.6 : 1,
+          opacity: disabled ? 0.35 : pressed ? 0.6 : 1,
         },
         style,
       ]}

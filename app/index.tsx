@@ -13,6 +13,8 @@ import { useToday } from '@/hooks/useToday';
 import { formatDateKeyLong } from '@/logic/dates';
 import { isHabitDueOn, isNeverDue } from '@/logic/frequency';
 import { canAddHabit } from '@/monetization/entitlements';
+import { useShallow } from 'zustand/react/shallow';
+
 import { selectActiveHabits, useHabitsStore } from '@/store/useHabitsStore';
 import { usePremiumStore } from '@/store/usePremiumStore';
 import { useTheme } from '@/theme';
@@ -24,7 +26,9 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { colors, spacing } = useTheme();
 
-  const habits = useHabitsStore(selectActiveHabits);
+  // useShallow: the selector builds a new array, which would otherwise make
+  // zustand report a change on every render and loop forever.
+  const habits = useHabitsStore(useShallow(selectActiveHabits));
   const completions = useHabitsStore((s) => s.completions);
   const status = useHabitsStore((s) => s.status);
   const load = useHabitsStore((s) => s.load);

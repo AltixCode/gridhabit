@@ -7,6 +7,8 @@ import { Divider, SettingsGroup, SettingsRow } from '@/components/SettingsRow';
 import { Screen } from '@/components/ui/Screen';
 import { useDb } from '@/hooks/useHabitData';
 import { useToday } from '@/hooks/useToday';
+import { useShallow } from 'zustand/react/shallow';
+
 import { selectArchivedHabits, useHabitsStore } from '@/store/useHabitsStore';
 import { useTheme } from '@/theme';
 
@@ -15,7 +17,7 @@ export default function ArchiveScreen() {
   const today = useToday();
   const { spacing } = useTheme();
 
-  const archived = useHabitsStore(selectArchivedHabits);
+  const archived = useHabitsStore(useShallow(selectArchivedHabits));
   const completions = useHabitsStore((s) => s.completions);
   const setArchived = useHabitsStore((s) => s.setArchived);
 

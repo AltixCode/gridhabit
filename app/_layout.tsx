@@ -63,6 +63,7 @@ function RootNavigator() {
         <Stack.Screen name="habit/edit/[id]" options={{ title: 'Edit habit', presentation: 'modal' }} />
         <Stack.Screen name="settings" options={{ title: 'Settings' }} />
         <Stack.Screen name="archive" options={{ title: 'Archived habits' }} />
+        <Stack.Screen name="reorder" options={{ title: 'Reorder habits' }} />
         <Stack.Screen
           name="paywall"
           options={{

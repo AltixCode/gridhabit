@@ -17,7 +17,7 @@ import { useToday } from '@/hooks/useToday';
 import { describeFrequency } from '@/logic/frequency';
 import { summarizeHabit } from '@/logic/streak';
 import { cancelHabitReminders } from '@/notifications/reminders';
-import { useHabitsStore } from '@/store/useHabitsStore';
+import { selectCompletions, useHabitsStore } from '@/store/useHabitsStore';
 import { useTheme } from '@/theme';
 
 const GRID_WEEKS = 52;
@@ -30,7 +30,8 @@ export default function HabitDetailScreen() {
   const { colors, spacing } = useTheme();
 
   const habit = useHabitsStore((s) => s.habits.find((h) => h.id === id));
-  const completions = useHabitsStore((s) => (id ? (s.completions[id] ?? []) : []));
+  // A stable empty array: `?? []` in a selector is a new reference each call.
+  const completions = useHabitsStore(selectCompletions(id));
   const setCompletion = useHabitsStore((s) => s.setCompletion);
   const setArchived = useHabitsStore((s) => s.setArchived);
   const removeHabit = useHabitsStore((s) => s.removeHabit);

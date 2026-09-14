@@ -1,0 +1,131 @@
+import { fireEvent } from '@testing-library/react-native';
+import React from 'react';
+
+import { renderWithProviders } from '@/components/__tests__/renderWithProviders';
+import type { Habit } from '@/db/types';
+import { useHabitsStore } from '@/store/useHabitsStore';
+import { usePremiumStore } from '@/store/usePremiumStore';
+
+import ArchiveScreen from '../archive';
+import SettingsScreen from '../settings';
+
+const mockPush = jest.fn();
+
+jest.mock('@/hooks/useHabitData', () => ({ useDb: () => ({}) }));
+jest.mock('@/hooks/useToday', () => ({ useToday: () => '2026-09-13' }));
+jest.mock('expo-router', () => ({
+  Link: ({ children }: { children: React.ReactNode }) => children,
+  Stack: { Screen: () => null },
+  useRouter: () => ({ push: mockPush, replace: jest.fn(), back: jest.fn() }),
+  useLocalSearchParams: () => ({}),
+}));
+
+const setArchived = jest.fn().mockResolvedValue(undefined);
+
+function habit(id: string, name: string, over: Partial<Habit> = {}): Habit {
+  return {
+    id,
+    name,
+    color: '#7C5CFF',
+    icon: null,
+    frequency: { type: 'daily' },
+    createdAt: '2026-08-01',
+    archived: false,
+    sortOrder: 0,
+    reminderEnabled: false,
+    reminderTime: null,
+    notificationId: null,
+    ...over,
+  };
+}
+
+function seed(habits: Habit[]) {
+  useHabitsStore.setState({
+    habits,
+    completions: {},
+    status: 'ready',
+    error: null,
+    setArchived,
+    load: jest.fn().mockResolvedValue(undefined),
+  } as never);
+}
+
+beforeEach(() => {
+  mockPush.mockClear();
+  setArchived.mockClear();
+  usePremiumStore.setState({ isPremium: false, isReady: true });
+  seed([]);
+});
+
+// These screens subscribe to array-building selectors. Rendering them at all is
+// the guard against the zustand snapshot-identity render loop.
+describe('ArchiveScreen', () => {
+  it('renders an empty state with nothing archived', async () => {
+    seed([habit('a', 'Meditate')]);
+    const { getByText } = await renderWithProviders(<ArchiveScreen />);
+    expect(getByText('Nothing archived')).toBeTruthy();
+  });
+
+  it('lists archived habits only', async () => {
+    seed([habit('a', 'Meditate'), habit('b', 'Read', { archived: true })]);
+    const { getByText, queryByText } = await renderWithProviders(<ArchiveScreen />);
+    expect(getByText('Read')).toBeTruthy();
+    expect(queryByText('Meditate')).toBeNull();
+  });
+
+  it('restores a habit when its row is tapped', async () => {
+    seed([habit('b', 'Read', { archived: true })]);
+    const { getByLabelText } = await renderWithProviders(<ArchiveScreen />);
+    await fireEvent.press(getByLabelText('Read'));
+    expect(setArchived).toHaveBeenCalledWith({}, 'b', false);
+  });
+});
+
+describe('SettingsScreen', () => {
+  it('renders for a free user and offers the upgrade', async () => {
+    seed([habit('a', 'Meditate')]);
+    const { getByText } = await renderWithProviders(<SettingsScreen />);
+    expect(getByText('Go Pro, once')).toBeTruthy();
+    expect(getByText('3 of 4 free habits remaining.')).toBeTruthy();
+  });
+
+  it('reports when every free slot is used', async () => {
+    seed(['a', 'b', 'c', 'd'].map((id, i) => habit(id, `Habit ${i}`)));
+    const { getByText } = await renderWithProviders(<SettingsScreen />);
+    expect(getByText('You are using all 4 free habits.')).toBeTruthy();
+  });
+
+  it('thanks a premium user instead of selling to them', async () => {
+    usePremiumStore.setState({ isPremium: true, isReady: true });
+    const { getByText, queryByText } = await renderWithProviders(<SettingsScreen />);
+    expect(getByText('GridHabit Pro')).toBeTruthy();
+    expect(queryByText('Go Pro, once')).toBeNull();
+  });
+
+  it('marks export as Pro for a free user', async () => {
+    const { getAllByText } = await renderWithProviders(<SettingsScreen />);
+    expect(getAllByText('Pro').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('sends a free user tapping export to the paywall', async () => {
+    const { getByLabelText } = await renderWithProviders(<SettingsScreen />);
+    await fireEvent.press(getByLabelText('Export as CSV'));
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/paywall',
+      params: { reason: 'export' },
+    });
+  });
+
+  it('shows the archived habit count', async () => {
+    seed([habit('a', 'Meditate'), habit('b', 'Read', { archived: true })]);
+    const { getByText } = await renderWithProviders(<SettingsScreen />);
+    expect(getByText('1')).toBeTruthy();
+  });
+
+  it('opens the reorder screen', async () => {
+    seed([habit('a', 'Meditate')]);
+    const { getByLabelText } = await renderWithProviders(<SettingsScreen />);
+    await fireEvent.press(getByLabelText('Reorder habits'));
+    expect(mockPush).toHaveBeenCalledWith('/reorder');
+  });
+});

@@ -81,6 +81,16 @@ describe('IconButton', () => {
     expect(onPress).toHaveBeenCalled();
   });
 
+  it('announces and enforces a disabled state', async () => {
+    const onPress = jest.fn();
+    const { getByLabelText } = await renderWithProviders(
+      <IconButton icon="chevron-up" accessibilityLabel="Move up" disabled onPress={onPress} />,
+    );
+    expect(getByLabelText('Move up').props.accessibilityState.disabled).toBe(true);
+    await fireEvent.press(getByLabelText('Move up'));
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
   it('meets the minimum touch target', async () => {
     const { getByLabelText } = await renderWithProviders(
       <IconButton icon="x" accessibilityLabel="Close" />,

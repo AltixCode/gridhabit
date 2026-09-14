@@ -142,11 +142,50 @@ export const useHabitsStore = create<HabitsState>((set, get) => ({
   },
 }));
 
-/** Selector: only the habits visible on the home screen. */
+/**
+ * Selectors.
+ *
+ * IMPORTANT: the array selectors below build a NEW array on every call. Zustand
+ * v5 compares snapshots with `Object.is`, so subscribing to one of them
+ * directly makes React see the store change on every render and re-render
+ * forever ("Maximum update depth exceeded"). Always wrap them:
+ *
+ *     useHabitsStore(useShallow(selectActiveHabits))
+ *
+ * The scalar selectors need no wrapper, so prefer them when you only want a
+ * count. `selectStableEmpty` exists for the same reason: `?? []` inside a
+ * selector is a new reference each time.
+ */
+
+/** A single frozen empty array, so an absent value is a stable reference. */
+export const NO_COMPLETIONS: readonly DateKey[] = Object.freeze([]);
+
+/** Only the habits visible on the home screen. Wrap in `useShallow`. */
 export function selectActiveHabits(state: HabitsState): Habit[] {
   return state.habits.filter((h) => !h.archived);
 }
 
+/** Wrap in `useShallow`. */
 export function selectArchivedHabits(state: HabitsState): Habit[] {
   return state.habits.filter((h) => h.archived);
+}
+
+/** Scalar, so it is safe to subscribe to directly. */
+export function selectActiveHabitCount(state: HabitsState): number {
+  let count = 0;
+  for (const habit of state.habits) if (!habit.archived) count += 1;
+  return count;
+}
+
+/** Scalar, so it is safe to subscribe to directly. */
+export function selectArchivedHabitCount(state: HabitsState): number {
+  let count = 0;
+  for (const habit of state.habits) if (habit.archived) count += 1;
+  return count;
+}
+
+/** Completions for one habit, or a stable empty array. */
+export function selectCompletions(habitId: string | undefined) {
+  return (state: HabitsState): readonly DateKey[] =>
+    habitId ? (state.completions[habitId] ?? NO_COMPLETIONS) : NO_COMPLETIONS;
 }

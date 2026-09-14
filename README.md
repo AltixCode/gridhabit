@@ -41,8 +41,9 @@ app/                      expo-router screens
   habit/[id].tsx          detail: 52-week grid + stats
   habit/new.tsx           create
   habit/edit/[id].tsx     edit
-  settings.tsx            theme, reminders, purchases, dev tools
+  settings.tsx            theme, reminders, purchases, export, dev tools
   archive.tsx             archived habits
+  reorder.tsx             arrange the Today list
   paywall.tsx             modal paywall
 src/
   logic/                  PURE domain logic (dates, frequency, streaks, grid)
@@ -65,7 +66,14 @@ different day. Streaks spanning a DST boundary, and a user who flies across
 timezones, are covered by explicit regression tests in
 `src/logic/__tests__/dates.test.ts` and `streak.test.ts`.
 
-**2. Business logic is pure and native-free.** Streak maths, grid construction,
+**2. Selectors that build arrays must be wrapped.** Zustand v5 compares
+snapshots with `Object.is`, so subscribing directly to a selector that returns a
+new array (`state.habits.filter(...)`, or `?? []`) makes React see a change on
+every render and loop until it throws *Maximum update depth exceeded*. Use
+`useShallow`, a scalar selector, or the shared `NO_COMPLETIONS` constant. The
+screen render tests in `app/__tests__/` exist to catch exactly this.
+
+**3. Business logic is pure and native-free.** Streak maths, grid construction,
 freemium gating and reminder scheduling contain no native imports, so all of it
 is exhaustively unit-tested in plain Node. The repository layer talks to a small
 `SqlDriver` interface that `expo-sqlite` already satisfies, which lets the

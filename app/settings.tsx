@@ -15,7 +15,11 @@ import { Text } from '@/components/ui/Text';
 import { PRIVACY_POLICY_URL, SUPPORT_EMAIL, TERMS_URL } from '@/monetization/config';
 import { FREE_HABIT_LIMIT, habitSlotsRemaining } from '@/monetization/entitlements';
 import { cancelAllReminders } from '@/notifications/reminders';
-import { selectActiveHabits, selectArchivedHabits, useHabitsStore } from '@/store/useHabitsStore';
+import {
+  selectActiveHabitCount,
+  selectArchivedHabitCount,
+  useHabitsStore,
+} from '@/store/useHabitsStore';
 import { usePremiumStore } from '@/store/usePremiumStore';
 import { useTheme, type ThemePreference } from '@/theme';
 
@@ -35,8 +39,8 @@ export default function SettingsScreen() {
   const restore = usePremiumStore((s) => s.restore);
   const loadHabits = useHabitsStore((s) => s.load);
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
-  const activeCount = useHabitsStore(selectActiveHabits).length;
-  const archivedCount = useHabitsStore(selectArchivedHabits).length;
+  const activeCount = useHabitsStore(selectActiveHabitCount);
+  const archivedCount = useHabitsStore(selectArchivedHabitCount);
 
   const slots = habitSlotsRemaining(activeCount, isPremium);
 
@@ -167,6 +171,13 @@ export default function SettingsScreen() {
       </SettingsGroup>
 
       <SettingsGroup title="Habits">
+        <SettingsRow
+          icon="list"
+          label="Reorder habits"
+          description="Arrange Today in the order you do them."
+          onPress={() => router.push('/reorder')}
+        />
+        <Divider />
         <SettingsRow
           icon="archive"
           label="Archived habits"

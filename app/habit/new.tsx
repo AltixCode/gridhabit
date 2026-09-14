@@ -8,7 +8,7 @@ import { useDb } from '@/hooks/useHabitData';
 import { useToday } from '@/hooks/useToday';
 import { canAddHabit } from '@/monetization/entitlements';
 import { syncHabitReminders } from '@/notifications/reminders';
-import { selectActiveHabits, useHabitsStore } from '@/store/useHabitsStore';
+import { selectActiveHabitCount, useHabitsStore } from '@/store/useHabitsStore';
 import { usePremiumStore } from '@/store/usePremiumStore';
 import { useTheme } from '@/theme';
 
@@ -21,7 +21,7 @@ export default function NewHabitScreen() {
 
   const addHabit = useHabitsStore((s) => s.addHabit);
   const editHabit = useHabitsStore((s) => s.editHabit);
-  const activeCount = useHabitsStore(selectActiveHabits).length;
+  const activeCount = useHabitsStore(selectActiveHabitCount);
   const isPremium = usePremiumStore((s) => s.isPremium);
 
   const handleSubmit = useCallback(
