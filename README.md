@@ -102,7 +102,7 @@ user is not premium, so a paying user never sees an ad flash on cold start. See
 | Command | What it does |
 |---|---|
 | `npm start` | Metro, for a development client |
-| `npm test` | Jest (watch: `npm run test:watch`) |
+| `npm test` | Jest — 436 tests (watch: `npm run test:watch`) |
 | `npm run test:ci` | Jest with coverage thresholds |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run doctor` | `expo-doctor` config and dependency validation |

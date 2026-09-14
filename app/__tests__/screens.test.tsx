@@ -1,4 +1,5 @@
-import { fireEvent } from '@testing-library/react-native';
+import { fireEvent, waitFor } from '@testing-library/react-native';
+import { Alert, Linking } from 'react-native';
 import React from 'react';
 
 import { renderWithProviders } from '@/components/__tests__/renderWithProviders';
@@ -13,6 +14,16 @@ const mockPush = jest.fn();
 
 jest.mock('@/hooks/useHabitData', () => ({ useDb: () => ({}) }));
 jest.mock('@/hooks/useToday', () => ({ useToday: () => '2026-09-13' }));
+const mockShareExport = jest.fn().mockResolvedValue({ status: 'shared' });
+jest.mock('@/export/shareExport', () => ({
+  shareExport: (...args: unknown[]) => mockShareExport(...args),
+}));
+
+const mockCancelAllReminders = jest.fn().mockResolvedValue(undefined);
+jest.mock('@/notifications/reminders', () => ({
+  cancelAllReminders: () => mockCancelAllReminders(),
+}));
+
 jest.mock('expo-router', () => ({
   Link: ({ children }: { children: React.ReactNode }) => children,
   Stack: { Screen: () => null },
@@ -21,6 +32,7 @@ jest.mock('expo-router', () => ({
 }));
 
 const setArchived = jest.fn().mockResolvedValue(undefined);
+const restore = jest.fn().mockResolvedValue('none');
 
 function habit(id: string, name: string, over: Partial<Habit> = {}): Habit {
   return {
@@ -53,9 +65,14 @@ function seed(habits: Habit[]) {
 beforeEach(() => {
   mockPush.mockClear();
   setArchived.mockClear();
-  usePremiumStore.setState({ isPremium: false, isReady: true });
+  usePremiumStore.setState({ isPremium: false, isReady: true, restore } as never);
+  mockShareExport.mockClear().mockResolvedValue({ status: 'shared' });
+  mockCancelAllReminders.mockClear();
+  restore.mockClear().mockResolvedValue('none');
   seed([]);
 });
+
+afterEach(() => jest.restoreAllMocks());
 
 // These screens subscribe to array-building selectors. Rendering them at all is
 // the guard against the zustand snapshot-identity render loop.
@@ -127,5 +144,100 @@ describe('SettingsScreen', () => {
     const { getByLabelText } = await renderWithProviders(<SettingsScreen />);
     await fireEvent.press(getByLabelText('Reorder habits'));
     expect(mockPush).toHaveBeenCalledWith('/reorder');
+  });
+});
+
+describe('SettingsScreen — data and purchases', () => {
+  it('exports CSV for a premium user without going near the paywall', async () => {
+    usePremiumStore.setState({ isPremium: true, isReady: true, restore } as never);
+    const { getByLabelText } = await renderWithProviders(<SettingsScreen />);
+    await fireEvent.press(getByLabelText('Export as CSV'));
+
+    await waitFor(() => expect(mockShareExport).toHaveBeenCalledWith({}, 'csv', '2026-09-13'));
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('exports JSON for a premium user', async () => {
+    usePremiumStore.setState({ isPremium: true, isReady: true, restore } as never);
+    const { getByLabelText } = await renderWithProviders(<SettingsScreen />);
+    await fireEvent.press(getByLabelText('Export as JSON'));
+    await waitFor(() => expect(mockShareExport).toHaveBeenCalledWith({}, 'json', '2026-09-13'));
+  });
+
+  it('explains an empty export rather than sharing an empty file', async () => {
+    usePremiumStore.setState({ isPremium: true, isReady: true, restore } as never);
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    mockShareExport.mockResolvedValue({ status: 'empty' });
+    const { getByLabelText } = await renderWithProviders(<SettingsScreen />);
+    await fireEvent.press(getByLabelText('Export as CSV'));
+    await waitFor(() =>
+      expect(alert).toHaveBeenCalledWith('Nothing to export', expect.any(String)),
+    );
+  });
+
+  it('surfaces an export failure', async () => {
+    usePremiumStore.setState({ isPremium: true, isReady: true, restore } as never);
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    mockShareExport.mockResolvedValue({ status: 'error', message: 'disk full' });
+    const { getByLabelText } = await renderWithProviders(<SettingsScreen />);
+    await fireEvent.press(getByLabelText('Export as JSON'));
+    await waitFor(() => expect(alert).toHaveBeenCalledWith('Export failed', 'disk full'));
+  });
+
+  it('cycles the theme through system, light and dark', async () => {
+    const { getByLabelText, getByText } = await renderWithProviders(<SettingsScreen />);
+    expect(getByText('Match system')).toBeTruthy();
+    await fireEvent.press(getByLabelText('Theme'));
+    await waitFor(() => expect(getByText('Light')).toBeTruthy());
+    await fireEvent.press(getByLabelText('Theme'));
+    await waitFor(() => expect(getByText('Dark')).toBeTruthy());
+    await fireEvent.press(getByLabelText('Theme'));
+    await waitFor(() => expect(getByText('Match system')).toBeTruthy());
+  });
+
+  it('reports a successful restore', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    restore.mockResolvedValue('purchased');
+    const { getByLabelText } = await renderWithProviders(<SettingsScreen />);
+    await fireEvent.press(getByLabelText('Restore purchases'));
+    await waitFor(() => expect(alert).toHaveBeenCalledWith('Restored', expect.any(String)));
+  });
+
+  it('reports when there is nothing to restore', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const { getByLabelText } = await renderWithProviders(<SettingsScreen />);
+    await fireEvent.press(getByLabelText('Restore purchases'));
+    await waitFor(() =>
+      expect(alert).toHaveBeenCalledWith('Nothing to restore', expect.any(String)),
+    );
+  });
+
+  it('confirms before turning every reminder off', async () => {
+    let confirm: (() => void) | undefined;
+    jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
+      confirm = buttons?.find((b) => b.style === 'destructive')?.onPress as () => void;
+    });
+    const { getByLabelText } = await renderWithProviders(<SettingsScreen />);
+    await fireEvent.press(getByLabelText('Turn off all reminders'));
+
+    expect(mockCancelAllReminders).not.toHaveBeenCalled();
+    confirm?.();
+    expect(mockCancelAllReminders).toHaveBeenCalled();
+  });
+
+  it('offers manage-subscription only to a premium user', async () => {
+    const free = await renderWithProviders(<SettingsScreen />);
+    expect(free.queryByLabelText('Manage subscription')).toBeNull();
+
+    usePremiumStore.setState({ isPremium: true, isReady: true, restore } as never);
+    const paid = await renderWithProviders(<SettingsScreen />);
+    expect(paid.queryByLabelText('Manage subscription')).not.toBeNull();
+  });
+
+  it('opens the privacy policy', async () => {
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    const { getByLabelText } = await renderWithProviders(<SettingsScreen />);
+    await fireEvent.press(getByLabelText('Privacy policy'));
+    expect(open).toHaveBeenCalledWith(expect.stringContaining('privacy'));
   });
 });

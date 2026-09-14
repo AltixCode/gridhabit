@@ -17,6 +17,10 @@ module.exports = {
   },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
+    // Screens too: the render-loop bug that crashed the Today screen lived
+    // here, and went unmeasured because this directory was not collected.
+    'app/**/*.tsx',
+    '!app/_layout.tsx',
     '!src/**/*.d.ts',
     '!src/**/__tests__/**',
     // Barrel files re-export only; there is nothing to cover.
@@ -30,6 +34,6 @@ module.exports = {
     '!src/dev/seedDatabase.ts',
   ],
   coverageThreshold: {
-    global: { branches: 78, functions: 88, lines: 88, statements: 85 },
+    global: { branches: 82, functions: 88, lines: 90, statements: 88 },
   },
 };
