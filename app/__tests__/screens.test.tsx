@@ -1,4 +1,4 @@
-import { fireEvent, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert, Linking } from 'react-native';
 import React from 'react';
 
@@ -229,7 +229,9 @@ describe('SettingsScreen — data and purchases', () => {
     const free = await renderWithProviders(<SettingsScreen />);
     expect(free.queryByLabelText('Manage subscription')).toBeNull();
 
-    usePremiumStore.setState({ isPremium: true, isReady: true, restore } as never);
+    await act(async () => {
+      usePremiumStore.setState({ isPremium: true, isReady: true, restore } as never);
+    });
     const paid = await renderWithProviders(<SettingsScreen />);
     expect(paid.queryByLabelText('Manage subscription')).not.toBeNull();
   });

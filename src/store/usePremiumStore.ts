@@ -60,9 +60,15 @@ export const usePremiumStore = create<PremiumState>((set, get) => ({
     }
 
     if (!isPurchasesConfigured) {
-      // No billing configured (fresh clone, CI smoke build): run as a free app
-      // rather than crashing, but never show ads we cannot switch off.
-      set({ isReady: false });
+      // No billing configured (fresh clone, CI smoke build, a device without Play services):
+      // run as a free app. Entitlement is resolved -- to "not premium" unless the cache above
+      // said otherwise -- so ads serve normally.
+      //
+      // This used to leave isReady false, which reads as "still loading" forever: the banner
+      // never rendered and the app earned nothing, on exactly the devices where billing is
+      // unavailable. A cached premium user is still protected, because the cache is read
+      // before this point and never shows ads.
+      set({ isReady: true });
       return;
     }
 

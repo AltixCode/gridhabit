@@ -27,6 +27,8 @@ Set these in *Settings → Secrets and variables → Actions*:
 | `EXPO_TOKEN` | all EAS workflows |
 | `EAS_PROJECT_ID`, `EXPO_OWNER` | app config resolution |
 | `ADMOB_IOS_APP_ID`, `ADMOB_ANDROID_APP_ID` | native manifest injection at build |
+| `EXPO_PUBLIC_ADMOB_IOS_BANNER_ID`, `EXPO_PUBLIC_ADMOB_ANDROID_BANNER_ID` | the runtime ad units |
+| `EXPO_PUBLIC_REVENUECAT_IOS_KEY`, `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` | billing |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | Play submission (whole JSON file contents) |
 | `ASC_APP_ID`, `APPLE_TEAM_ID` | App Store submission |
 | `EXPO_APPLE_APP_SPECIFIC_PASSWORD` | App Store submission |
@@ -58,11 +60,23 @@ eas secret:push --scope project --env-file .env.local
 
 ```bash
 npm ci
+npm run lint
 npm run typecheck
 npm run test:ci
 npm run doctor          # must report 21/21
 npm run prebuild        # confirms plugins produce valid native projects
 ```
+
+Before a **production** build, also:
+
+```bash
+npm run check:release   # refuses a build still carrying Google test identifiers
+```
+
+The production build workflow runs this for you. It exists because a missing
+identifier does not crash anything — the app falls back to Google's test ad
+unit and earns nothing, which looks identical to a healthy app until the
+revenue line stays flat.
 
 CI runs the first three on every push; run `prebuild` locally after changing
 `app.config.ts` or adding a native dependency.

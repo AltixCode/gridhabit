@@ -26,9 +26,10 @@ module.exports = {
     // Barrel files re-export only; there is nothing to cover.
     '!src/**/index.ts',
     // Thin adapters over native SDKs with no branching logic of our own.
+    // NOTE: ads.ts used to be listed here. It now owns the UMP consent decision,
+    // which is compliance-critical branching, so it is measured.
     // Their behaviour is verified by manual QA on device (see docs/RELEASE.md),
     // not by asserting against a mock of the SDK we are wrapping.
-    '!src/monetization/ads.ts',
     '!src/notifications/reminders.ts',
     '!src/db/database.ts',
     '!src/dev/seedDatabase.ts',

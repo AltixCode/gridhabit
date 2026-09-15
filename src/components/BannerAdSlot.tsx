@@ -4,6 +4,7 @@ import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 
 import { bannerAdUnitId } from '@/monetization/config';
 import { shouldShowAds } from '@/monetization/entitlements';
+import { useAdsConsentStore } from '@/store/useAdsConsentStore';
 import { usePremiumStore } from '@/store/usePremiumStore';
 import { useTheme } from '@/theme';
 
@@ -18,15 +19,20 @@ import { useTheme } from '@/theme';
  *     the container grows below the content, never above it).
  *  3. Personalisation follows App Tracking Transparency: when the user
  *     declined tracking we explicitly request non-personalised ads.
+ *  4. Nothing is requested until UMP consent permits it. Without this an EEA
+ *     user who has not seen a consent form still has an ad request made on
+ *     their behalf, which is the breach that suspends AdMob accounts.
  */
 export function BannerAdSlot() {
   const isPremium = usePremiumStore((s) => s.isPremium);
   const isReady = usePremiumStore((s) => s.isReady);
+  const canServeAds = useAdsConsentStore((s) => s.consent.canServeAds);
   const { colors } = useTheme();
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
 
   if (!shouldShowAds({ isPremium, isReady }) || failed) return null;
+  if (!canServeAds) return null;
 
   return (
     <View

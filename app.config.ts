@@ -80,6 +80,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     'expo-router',
     'expo-sqlite',
+    // iOS 26+ refuses to launch an app that still drives its window from the app delegate:
+    // "UIScene life cycle is required for apps built with this SDK." The app installed and
+    // then quit to the home screen with nothing on screen to explain why.
+    './plugins/withIOSSceneLifecycle',
     [
       'expo-splash-screen',
       {

@@ -12,6 +12,7 @@ import { useToday } from '@/hooks/useToday';
 import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
+import { showPrivacyOptionsForm } from '@/monetization/ads';
 import { PRIVACY_POLICY_URL, SUPPORT_EMAIL, TERMS_URL } from '@/monetization/config';
 import { FREE_HABIT_LIMIT, habitSlotsRemaining } from '@/monetization/entitlements';
 import { cancelAllReminders } from '@/notifications/reminders';
@@ -20,6 +21,7 @@ import {
   selectArchivedHabitCount,
   useHabitsStore,
 } from '@/store/useHabitsStore';
+import { useAdsConsentStore } from '@/store/useAdsConsentStore';
 import { usePremiumStore } from '@/store/usePremiumStore';
 import { useTheme, type ThemePreference } from '@/theme';
 
@@ -36,6 +38,7 @@ export default function SettingsScreen() {
   const { spacing, preference, setPreference } = useTheme();
 
   const isPremium = usePremiumStore((s) => s.isPremium);
+  const offerPrivacyOptions = useAdsConsentStore((s) => s.consent.offerPrivacyOptions);
   const restore = usePremiumStore((s) => s.restore);
   const loadHabits = useHabitsStore((s) => s.load);
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
@@ -239,6 +242,20 @@ export default function SettingsScreen() {
         />
         <Divider />
         <SettingsRow icon="shield" label="Privacy policy" onPress={() => void Linking.openURL(PRIVACY_POLICY_URL)} />
+        {offerPrivacyOptions ? (
+          <>
+            <Divider />
+            {/* Google requires a standing entry back into the consent form wherever UMP
+                reports that privacy options exist -- in practice the EEA and the regulated
+                US states. It is absent elsewhere rather than shown as a dead control. */}
+            <SettingsRow
+              icon="sliders"
+              label="Ad privacy settings"
+              description="Change what ads may use."
+              onPress={() => void showPrivacyOptionsForm()}
+            />
+          </>
+        ) : null}
         <Divider />
         <SettingsRow icon="file-text" label="Terms of use" onPress={() => void Linking.openURL(TERMS_URL)} />
         <Divider />

@@ -1,10 +1,11 @@
-import { fireEvent } from '@testing-library/react-native';
+import { act, fireEvent } from '@testing-library/react-native';
 import React from 'react';
 import { Alert } from 'react-native';
 
 import { renderWithProviders } from '@/components/__tests__/renderWithProviders';
 import type { Habit } from '@/db/types';
 import { useHabitsStore } from '@/store/useHabitsStore';
+import { useAdsConsentStore } from '@/store/useAdsConsentStore';
 import { usePremiumStore } from '@/store/usePremiumStore';
 
 import HabitDetailScreen from '../habit/[id]';
@@ -164,10 +165,17 @@ describe('HabitDetailScreen', () => {
   });
 
   it('shows the banner to a free user and not to a premium one', async () => {
+    // A banner needs consent as well as a free account; consent is exercised directly
+    // in BannerAdSlot's own tests.
+    useAdsConsentStore.setState({
+      consent: { canServeAds: true, offerPrivacyOptions: false },
+    });
     const free = await renderWithProviders(<HabitDetailScreen />);
     expect(free.queryByTestId('banner-ad')).not.toBeNull();
 
-    usePremiumStore.setState({ isPremium: true, isReady: true });
+    await act(async () => {
+      usePremiumStore.setState({ isPremium: true, isReady: true });
+    });
     const paid = await renderWithProviders(<HabitDetailScreen />);
     expect(paid.queryByTestId('banner-ad')).toBeNull();
   });

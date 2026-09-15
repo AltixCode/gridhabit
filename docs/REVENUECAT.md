@@ -1,6 +1,6 @@
 # RevenueCat setup
 
-GridHabit sells a single entitlement, `pro`, through one offering. Getting the
+GridHabit sells a single entitlement, `remove_ads`, through one offering. Getting the
 identifiers right matters: the paywall orders and labels plans by matching them
 (`src/monetization/entitlements.ts`), and the tests lock that behaviour in.
 
@@ -36,7 +36,14 @@ value*.
 
 Create one entitlement:
 
-- Identifier: **`pro`** — must match `PRO_ENTITLEMENT`.
+- Identifier: **`remove_ads`** — must match `PRO_ENTITLEMENT` in
+  `src/monetization/entitlements.ts`, character for character.
+
+> If these ever disagree, a paying customer is charged and unlocks nothing: the
+> purchase succeeds, the entitlement lookup misses, and the app still shows ads
+> and the habit limit. An entitlement cannot be renamed after the fact without
+> recreating it and re-issuing the SDK keys, so confirm the spelling before the
+> first real purchase.
 - Attach all three products to it.
 
 ## 4. Offering

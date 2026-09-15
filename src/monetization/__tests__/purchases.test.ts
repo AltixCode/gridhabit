@@ -1,5 +1,6 @@
 import Purchases from 'react-native-purchases';
 
+import { PRO_ENTITLEMENT } from '../entitlements';
 import {
   addCustomerInfoListener,
   getCurrentOffering,
@@ -36,10 +37,24 @@ describe('hasProEntitlement', () => {
     ).toBe(false);
   });
 
-  it('is true when the pro entitlement is active', () => {
+  it('is true when the upgrade entitlement is active', () => {
+    // Keyed off the constant rather than a literal: the lookup key is whatever RevenueCat
+    // holds, and a test that hardcodes it fails for the wrong reason the day it is renamed.
+    expect(
+      hasProEntitlement({
+        entitlements: { active: { [PRO_ENTITLEMENT]: {} } },
+      } as never),
+    ).toBe(true);
+  });
+
+  it('is false for the old lookup key', () => {
+    // The portfolio moved from "pro" to "remove_ads" when the ads rollout made one purchase
+    // cover both. A build still matching the old key would hand the upgrade to nobody.
     expect(
       hasProEntitlement({ entitlements: { active: { pro: {} } } } as never),
-    ).toBe(true);
+      // Compared as a string so TypeScript does not narrow the literal away and reject the
+      // comparison outright.
+    ).toBe((PRO_ENTITLEMENT as string) === 'pro');
   });
 });
 

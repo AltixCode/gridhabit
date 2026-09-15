@@ -10,8 +10,15 @@
 /** Habits a free user may keep active at once. */
 export const FREE_HABIT_LIMIT = 4;
 
-/** The RevenueCat entitlement that unlocks everything. */
-export const PRO_ENTITLEMENT = 'pro';
+/**
+ * The RevenueCat entitlement one purchase grants.
+ *
+ * The lookup key says "remove ads" because that is what the store product is named, but the
+ * entitlement carries the whole upgrade: no ads *and* no free-tier limits. Keeping the key as
+ * RevenueCat has it matters more than the name reading perfectly here -- renaming an
+ * entitlement means recreating it, and the SDK keys die with it.
+ */
+export const PRO_ENTITLEMENT = 'remove_ads';
 
 export type PaywallReason = 'habit-limit' | 'remove-ads' | 'themes' | 'export' | 'generic';
 
