@@ -8,6 +8,11 @@ React Native + Expo (SDK 57), TypeScript, local-first SQLite. Free with a banner
 ad and up to four habits; one lifetime purchase removes the ads and the limit
 forever.
 
+> **Picking this up, or getting it into the stores? Start with
+> [`HANDOFF.md`](HANDOFF.md).** It covers what is built, what has never been run
+> on a device, the engineering work left, and every manual console step the
+> account owner has to do before a submission is possible.
+
 ---
 
 ## Quick start
