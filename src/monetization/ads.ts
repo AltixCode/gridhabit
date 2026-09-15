@@ -28,9 +28,11 @@ import { useAdsConsentStore } from '@/store/useAdsConsentStore';
 /** The Mobile Ads SDK has been initialised. Separate from consent on purpose. */
 let initialised = false;
 let consent: ConsentSummary = { canServeAds: false, offerPrivacyOptions: false };
+let consentGathered = false;
 
 function applyConsent(next: ConsentSummary): void {
   consent = next;
+  consentGathered = true;
   // Published to the store as well so the banner re-renders when consent resolves.
   useAdsConsentStore.getState().setConsent(next);
 }
@@ -96,7 +98,10 @@ export async function requestTrackingPermission(): Promise<boolean> {
 export async function initializeAds(): Promise<void> {
   if (initialised) return;
   try {
-    if (!consent.canServeAds) {
+    // Gate on "have we asked", not on "did they say yes". Gating on the answer
+    // re-presents the consent form on every entry point after a refusal, which
+    // is both a worse experience and the opposite of what a refusal means.
+    if (!consentGathered) {
       applyConsent(await gatherConsent());
     }
     if (!consent.canServeAds) {
@@ -139,8 +144,14 @@ export async function bootstrapAds(): Promise<void> {
   //
   // `initializeAds` gathers consent itself and only starts the SDK when consent
   // allows it, so ATT is requested in between.
-  await gatherAndApplyConsent();
-  await requestTrackingPermission();
+  // This runs from an effect that re-runs whenever premium or readiness
+  // changes, so it must be idempotent. gatherAndApplyConsent stays an
+  // unconditional entry point for the places that mean "ask again".
+  const summary = consentGathered ? consent : await gatherAndApplyConsent();
+  // Nobody is asked to allow tracking for ads they will never be shown. ATT is
+  // the narrower question that only makes sense once consent has established
+  // there will be advertising at all.
+  if (summary.canServeAds) await requestTrackingPermission();
   await initializeAds();
 }
 

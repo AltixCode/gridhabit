@@ -90,6 +90,12 @@ describe('initializeAds', () => {
    * Regression guard. A refusal used to latch `initialised`, so the SDK could
    * never start later in the session even after the user opted in — the banner
    * rendered against an uninitialised SDK and silently never filled.
+   *
+   * The opt-in is exercised through the privacy options form, which is the only
+   * way consent actually changes mid-session. It used to be written as a second
+   * `initializeAds` with a different mock, which passed for the wrong reason:
+   * it depended on re-presenting the consent form after a refusal, which is
+   * behaviour we do not want.
    */
   it('can still start later if consent is granted after a refusal', async () => {
     mockGatherConsent.mockResolvedValue(REFUSED);
@@ -97,8 +103,8 @@ describe('initializeAds', () => {
     await ads.initializeAds();
     expect(mockInitialize).not.toHaveBeenCalled();
 
-    mockGatherConsent.mockResolvedValue(CONSENTED);
-    await ads.initializeAds();
+    mockShowPrivacyOptionsForm.mockResolvedValue(CONSENTED);
+    await ads.showPrivacyOptionsForm();
     expect(mockInitialize).toHaveBeenCalledTimes(1);
   });
 
@@ -155,11 +161,18 @@ describe('bootstrapAds', () => {
     expect(mockGatherConsent).toHaveBeenCalledTimes(1);
   });
 
-  it('still requests tracking when consent is refused, then starts nothing', async () => {
+  /**
+   * This asserted the opposite until the bootstrap order was looked at properly.
+   * ATT is the narrower question that only arises once UMP consent has
+   * established there will be advertising at all: when consent is refused no ad
+   * is ever requested, so a tracking prompt asks the user to permit tracking for
+   * something that will not happen.
+   */
+  it('does not ask for tracking when consent is refused, and starts nothing', async () => {
     mockGatherConsent.mockResolvedValue(REFUSED);
     const ads = loadAds();
     await ads.bootstrapAds();
-    expect(mockRequestTracking).toHaveBeenCalled();
+    expect(mockRequestTracking).not.toHaveBeenCalled();
     expect(mockInitialize).not.toHaveBeenCalled();
   });
 });

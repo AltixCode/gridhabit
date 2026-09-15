@@ -33,6 +33,18 @@ jest.mock('react-native-google-mobile-ads', () => {
     BannerAd: (props) => React.createElement(View, { testID: 'banner-ad', ...props }),
     BannerAdSize: { ANCHORED_ADAPTIVE_BANNER: 'ANCHORED_ADAPTIVE_BANNER' },
     MaxAdContentRating: { G: 'G' },
+    // The consent API was missing here entirely. Every test passed anyway,
+    // because not one of them exercised the consent path -- the absence was
+    // invisible until a test finally asked what order consent and ATT run in.
+    AdsConsent: {
+      gatherConsent: jest.fn().mockResolvedValue({
+        status: 'NOT_REQUIRED',
+        canRequestAds: true,
+        privacyOptionsRequirementStatus: 'NOT_REQUIRED',
+      }),
+      showPrivacyOptionsForm: jest.fn(),
+    },
+    AdsConsentDebugGeography: { OTHER: 'OTHER', EEA: 'EEA' },
   };
 });
 
