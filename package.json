@@ -61,7 +61,7 @@
     "doctor": "npx expo-doctor",
     "assets": "node scripts/generate-assets.mjs",
     "bundle": "expo export --platform ios --output-dir dist/ios && expo export --platform android --output-dir dist/android",
-    "check:release": "tsx scripts/check-release-config.ts"
+    "check:release": "node scripts/check-paywall-copy.mjs && tsx scripts/check-release-config.ts"
   },
   "private": true,
   "overrides": {
