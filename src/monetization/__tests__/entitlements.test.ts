@@ -7,6 +7,7 @@ import {
   sortPlans,
   summarizePlan,
   type PlanLike,
+  type PaywallReason,
 } from '../entitlements';
 
 describe('canAddHabit', () => {
@@ -161,5 +162,38 @@ describe('sortPlans', () => {
     const copy = [...plans];
     sortPlans(plans);
     expect(plans).toEqual(copy);
+  });
+});
+
+describe('paywall reason copy', () => {
+  // A reason exists to explain why THIS paywall appeared. If its copy does not
+  // mention the thing the user just hit, the explanation is not an explanation.
+  //
+  // 'themes' used to return "Unlock everything, including every feature added
+  // later." -- copy that mentions no themes, for a feature GridHabit does not
+  // have: there is no theme picker anywhere in the app. It was a paid claim for
+  // something that did not exist, which is the one thing this portfolio does
+  // not ship. It was also the only reason nothing ever raised, so it was
+  // invisible in use as well as wrong.
+  const MUST_MENTION: Record<PaywallReason, RegExp> = {
+    'habit-limit': /habit/i,
+    'remove-ads': /ads?\b/i,
+    export: /export/i,
+    generic: /unlock|everything/i,
+  };
+
+  it.each(Object.keys(MUST_MENTION) as PaywallReason[])(
+    '%s explains itself',
+    (reason) => {
+      const pattern = MUST_MENTION[reason];
+      expect(pattern).toBeDefined();
+      expect(paywallReasonFor(reason)).toMatch(pattern as RegExp);
+    },
+  );
+
+  it('promises nothing open-ended about features that do not exist yet', () => {
+    for (const reason of Object.keys(MUST_MENTION) as PaywallReason[]) {
+      expect(paywallReasonFor(reason)).not.toMatch(/added later|future|coming soon/i);
+    }
   });
 });
