@@ -43,6 +43,24 @@ export function habitSlotsRemaining(activeHabitCount: number, isPremium: boolean
 }
 
 /**
+ * Suppresses the advert slot while capturing store screenshots.
+ *
+ * The banner reserves no space until an advert actually loads, so there is only
+ * a few seconds between "still mounting" and "contaminated": measured on this
+ * app, a frame is clean at 4s and carries the AdMob test creative -- with a
+ * literal "Test mode" badge -- by 6s. Timing the shutter against that is a coin
+ * flip, and a test-mode badge has reached App Store Connect before. The fix is
+ * to stop the slot rendering rather than to race it.
+ *
+ * `__DEV__` is what makes this safe: it is false in every release build, so the
+ * flag is inert in anything that ships no matter how the environment is set.
+ * A capture build is a debug build by definition.
+ */
+export function isCaptureMode(): boolean {
+  return __DEV__ && process.env.EXPO_PUBLIC_CAPTURE_MODE === '1';
+}
+
+/**
  * Ads are shown only once we positively know the user is NOT premium. Rendering
  * ads while entitlements are still loading would flash an ad at a paying user
  * on every cold start — the single most damaging bug this feature can have.
@@ -54,6 +72,7 @@ export function shouldShowAds({
   isPremium: boolean;
   isReady: boolean;
 }): boolean {
+  if (isCaptureMode()) return false;
   return isReady && !isPremium;
 }
 

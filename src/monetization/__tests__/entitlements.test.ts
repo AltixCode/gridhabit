@@ -197,3 +197,28 @@ describe('paywall reason copy', () => {
     }
   });
 });
+
+describe('capture mode', () => {
+  // GridHabit was one of only two apps in the portfolio that never implemented
+  // this gate, so the EXPO_PUBLIC_CAPTURE_MODE flag device-pass.sh exports did
+  // nothing here and its store screenshots carried a Google TEST advert with a
+  // literal "Test mode" badge across the bottom -- a third party's creative in
+  // our shelf space, advertising that the build is not a release one.
+  afterEach(() => {
+    delete process.env.EXPO_PUBLIC_CAPTURE_MODE;
+  });
+
+  it('suppresses ads while a store screenshot is being captured', () => {
+    process.env.EXPO_PUBLIC_CAPTURE_MODE = '1';
+    expect(shouldShowAds({ isPremium: false, isReady: true })).toBe(false);
+  });
+
+  it('shows ads normally when the flag is absent', () => {
+    expect(shouldShowAds({ isPremium: false, isReady: true })).toBe(true);
+  });
+
+  it('ignores any value other than exactly "1"', () => {
+    process.env.EXPO_PUBLIC_CAPTURE_MODE = 'true';
+    expect(shouldShowAds({ isPremium: false, isReady: true })).toBe(true);
+  });
+});
