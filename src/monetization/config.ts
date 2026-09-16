@@ -39,5 +39,5 @@ export const bannerAdUnitId: string =
   (Platform.OS === 'ios' ? TEST_BANNER_IOS : TEST_BANNER_ANDROID);
 
 export const SUPPORT_EMAIL = 'support@altixcode.com';
-export const PRIVACY_POLICY_URL = 'https://altixcode.com/gridhabit/privacy';
-export const TERMS_URL = 'https://altixcode.com/gridhabit/terms';
+export const PRIVACY_POLICY_URL = 'https://altixcode.com/legal/app-privacy';
+export const TERMS_URL = 'https://altixcode.com/legal/terms';
