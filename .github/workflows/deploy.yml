@@ -66,6 +66,19 @@ env:
   EXPO_PUBLIC_ADMOB_IOS_REWARDED_ID: ${{ secrets.EXPO_PUBLIC_ADMOB_IOS_REWARDED_ID }}
   EXPO_PUBLIC_ADMOB_ANDROID_REWARDED_ID: ${{ secrets.EXPO_PUBLIC_ADMOB_ANDROID_REWARDED_ID }}
   EXPO_PUBLIC_REVENUECAT_IOS_KEY: ${{ secrets.EXPO_PUBLIC_REVENUECAT_IOS_KEY }}
+  # This app is from an EARLIER WAVE and its source reads the names WITHOUT the
+  # `_ID` suffix, plus EXPO_PUBLIC_-prefixed app ids. The block above is the
+  # newer template's naming. Both are passed because the secrets exist under
+  # both names and the gate checks what the SOURCE reads -- the comment above is
+  # right that getting this wrong lets check:release pass on names nothing reads.
+  EXPO_PUBLIC_ADMOB_IOS_APP_ID: ${{ secrets.ADMOB_IOS_APP_ID }}
+  EXPO_PUBLIC_ADMOB_ANDROID_APP_ID: ${{ secrets.ADMOB_ANDROID_APP_ID }}
+  EXPO_PUBLIC_ADMOB_IOS_BANNER: ${{ secrets.EXPO_PUBLIC_ADMOB_IOS_BANNER_ID }}
+  EXPO_PUBLIC_ADMOB_ANDROID_BANNER: ${{ secrets.EXPO_PUBLIC_ADMOB_ANDROID_BANNER_ID }}
+  EXPO_PUBLIC_ADMOB_IOS_INTERSTITIAL: ${{ secrets.EXPO_PUBLIC_ADMOB_IOS_INTERSTITIAL_ID }}
+  EXPO_PUBLIC_ADMOB_ANDROID_INTERSTITIAL: ${{ secrets.EXPO_PUBLIC_ADMOB_ANDROID_INTERSTITIAL_ID }}
+  EXPO_PUBLIC_ADMOB_IOS_REWARDED: ${{ secrets.EXPO_PUBLIC_ADMOB_IOS_REWARDED_ID }}
+  EXPO_PUBLIC_ADMOB_ANDROID_REWARDED: ${{ secrets.EXPO_PUBLIC_ADMOB_ANDROID_REWARDED_ID }}
   EXPO_PUBLIC_REVENUECAT_ANDROID_KEY: ${{ secrets.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY }}
 
 jobs:
