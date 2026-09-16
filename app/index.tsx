@@ -18,6 +18,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { selectActiveHabits, useHabitsStore } from '@/store/useHabitsStore';
 import { usePremiumStore } from '@/store/usePremiumStore';
 import { useTheme } from '@/theme';
+import { useTabletColumn } from '@/theme/useTabletColumn';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -25,6 +26,7 @@ export default function HomeScreen() {
   const today = useToday();
   const insets = useSafeAreaInsets();
   const { colors, spacing } = useTheme();
+  const tabletColumn = useTabletColumn();
 
   // useShallow: the selector builds a new array, which would otherwise make
   // zustand report a change on every render and loop forever.
@@ -72,6 +74,8 @@ export default function HomeScreen() {
           paddingHorizontal: spacing.base,
           paddingBottom: spacing['3xl'],
           gap: spacing.md,
+        
+          ...tabletColumn,
         }}
         ListHeaderComponent={
           <View style={{ gap: spacing.xs, marginBottom: spacing.base }}>
