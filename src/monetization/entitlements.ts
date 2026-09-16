@@ -20,7 +20,17 @@ export const FREE_HABIT_LIMIT = 4;
  */
 export const PRO_ENTITLEMENT = 'remove_ads';
 
-export type PaywallReason = 'habit-limit' | 'remove-ads' | 'themes' | 'export' | 'generic';
+/**
+ * Why a paywall appeared.
+ *
+ * `themes` was here and is gone. It returned "Unlock everything, including
+ * every feature added later." -- copy naming no themes, for a feature GridHabit
+ * does not have: there is no theme picker anywhere in the app. A paid claim for
+ * something that does not exist is the one thing this portfolio does not ship,
+ * and it was also the only reason nothing ever raised, so it was invisible in
+ * use as well as wrong.
+ */
+export type PaywallReason = 'habit-limit' | 'remove-ads' | 'export' | 'generic';
 
 export function canAddHabit(activeHabitCount: number, isPremium: boolean): boolean {
   if (isPremium) return true;
@@ -53,8 +63,6 @@ export function paywallReasonFor(reason: PaywallReason): string {
       return `You have reached the ${FREE_HABIT_LIMIT}-habit limit on the free plan.`;
     case 'remove-ads':
       return 'Remove ads and keep GridHabit completely distraction-free.';
-    case 'themes':
-      return 'Unlock everything, including every feature added later.';
     case 'export':
       return 'Export your full history as CSV or JSON.';
     case 'generic':
