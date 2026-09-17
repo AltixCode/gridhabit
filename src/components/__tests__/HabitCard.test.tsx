@@ -92,3 +92,44 @@ describe('HabitCard', () => {
     expect(getByLabelText('Activity over the last 14 weeks: 2 days completed')).toBeTruthy();
   });
 });
+
+describe('HabitCard accessibility', () => {
+  /**
+   * The card used to carry `accessibilityRole="button"` on its outer Pressable,
+   * which makes it a single accessibility element and COLLAPSES its children.
+   * With VoiceOver on, the whole row announced as one "name. frequency." button:
+   * the check button was unreachable and the grid announced nothing.
+   *
+   * Marking a habit done is this app's primary daily action. This test is about
+   * that function being reachable, not about the markup.
+   */
+  it('does not make the card itself an accessibility element', async () => {
+    // This asserts the MECHANISM, not the symptom, and that is deliberate.
+    //
+    // The obvious test -- query the check button and press it -- passes whether
+    // or not the bug is present: react-native-testing-library does not model
+    // the native collapsing of descendants, so `getByLabelText` finds a nested
+    // control even when a real VoiceOver user cannot reach it. I wrote that
+    // test first, reintroduced the bug, and watched it pass. It would have been
+    // a false guard.
+    //
+    // What actually causes the collapse is an accessibilityRole or
+    // accessibilityLabel on the container, so that is what is pinned here.
+    const { toJSON } = await renderCard({});
+    const tree = JSON.stringify(toJSON());
+
+    // The card's own container must not advertise itself to a screen reader.
+    // If either of these appears on it again, descendants collapse and the
+    // check button becomes unreachable.
+    expect(tree).toContain('"accessible":false');
+    expect(tree).not.toContain('"accessibilityHint":"Opens habit details","accessibilityRole":"button","accessible":true,"style":[{"backgroundColor"');
+  });
+
+  it('still offers a way to open the habit details', async () => {
+    // The title block carries the "opens details" affordance now, labelled with
+    // the habit and its frequency. getByLabelText matches accessibilityLabel,
+    // not accessibilityHint, so this asserts the label rather than the hint.
+    const { getByLabelText } = await renderCard({});
+    expect(getByLabelText(/Every day\./i)).toBeTruthy();
+  });
+});

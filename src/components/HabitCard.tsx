@@ -51,12 +51,22 @@ function HabitCardComponent({ habit, completions, today, onToggleToday }: HabitC
   const isCompletedToday = useMemo(() => completions.includes(today), [completions, today]);
   const isDueToday = !isNeverDue(habit.frequency) && isHabitDueOn(habit.frequency, today);
 
+  // The card is NOT an accessibility element.
+  //
+  // A View or Pressable carrying an accessibilityRole becomes one element and
+  // COLLAPSES everything inside it. With the role on the outer card, VoiceOver
+  // saw the whole row as a single "Morning. Every day." button -- so the check
+  // button was unreachable and the activity grid announced nothing. Marking a
+  // habit done is this app's primary daily action and the only thing most
+  // people do, and it was entirely absent with VoiceOver on.
+  //
+  // The card stays tappable by touch; the "open details" affordance moves onto
+  // the title block, which is the part that means "this habit". The check
+  // button and the grid are then siblings a screen reader can reach.
   return (
     <Link href={{ pathname: '/habit/[id]', params: { id: habit.id } }} asChild>
       <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${habit.name}. ${describeFrequency(habit.frequency)}.`}
-        accessibilityHint="Opens habit details"
+        accessible={false}
         style={({ pressed }) => [
           {
             backgroundColor: colors.surface,
@@ -71,7 +81,13 @@ function HabitCardComponent({ habit, completions, today, onToggleToday }: HabitC
         ]}
       >
         <View style={[styles.header, { gap: spacing.md }]}>
-          <View style={{ flex: 1, gap: 2 }}>
+          <View
+            style={{ flex: 1, gap: 2 }}
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={`${habit.name}. ${describeFrequency(habit.frequency)}.`}
+            accessibilityHint="Opens habit details"
+          >
             <View style={[styles.titleRow, { gap: spacing.sm }]}>
               {habit.icon ? (
                 <Feather
