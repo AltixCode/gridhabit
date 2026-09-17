@@ -16,6 +16,16 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 const TEST_ADMOB_IOS_APP_ID = 'ca-app-pub-3940256099942544~1458002511';
 const TEST_ADMOB_ANDROID_APP_ID = 'ca-app-pub-3940256099942544~3347511713';
 
+// `||`, never `??`, for an identifier that must not be empty.
+//
+// A GitHub Actions env var mapped from a missing secret arrives as an EMPTY
+// STRING, not undefined -- and `??` keeps an empty string. That ships
+// `GADApplicationIdentifier = ""`, which makes the Google Mobile Ads SDK raise
+// at startup: the app dies on launch, and Apple rejects it for crashing. Four
+// apps in this portfolio were rejected for exactly that, which is why
+// `attach-verified-build.py` reads the binary before attaching it to a version.
+// `||` falls back on the empty string too, so the test identifier is used and
+// the app starts.
 const IS_DEV = process.env.APP_VARIANT === 'development';
 const IS_PREVIEW = process.env.APP_VARIANT === 'preview';
 
@@ -112,8 +122,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'react-native-google-mobile-ads',
       {
-        androidAppId: process.env.ADMOB_ANDROID_APP_ID ?? TEST_ADMOB_ANDROID_APP_ID,
-        iosAppId: process.env.ADMOB_IOS_APP_ID ?? TEST_ADMOB_IOS_APP_ID,
+        androidAppId: process.env.ADMOB_ANDROID_APP_ID || TEST_ADMOB_ANDROID_APP_ID,
+        iosAppId: process.env.ADMOB_IOS_APP_ID || TEST_ADMOB_IOS_APP_ID,
         userTrackingUsageDescription:
           'GridHabit uses this to show ads that are more relevant to you. You can remove ads entirely with a one-time upgrade.',
         // Ads are never shown to children; the app is rated 4+ but is not
