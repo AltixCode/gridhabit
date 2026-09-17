@@ -5,7 +5,7 @@ import Purchases, {
   type PurchasesPackage,
 } from 'react-native-purchases';
 
-import { PRO_ENTITLEMENT, sortPlans, type PlanLike } from './entitlements';
+import { PRO_ENTITLEMENT, isCaptureMode, sortPlans, type PlanLike } from './entitlements';
 import { isPurchasesConfigured, revenueCatApiKey } from './config';
 
 /**
@@ -74,13 +74,51 @@ function periodUnitOf(period: string): string | null {
   return null;
 }
 
+/**
+ * The package list a store screenshot shows when the simulator has no store.
+ *
+ * A StoreKit configuration cannot reach this pipeline: Xcode applies one by
+ * syncing it to the device as part of running a scheme, via
+ * `-[DVTDevice handleStoreKitConfigurationSyncForBundleID:configurationFilePath:]`,
+ * and `xcrun simctl` has no equivalent. So an `expo run:ios` + `simctl launch`
+ * build never receives a product catalogue and the paywall renders its
+ * unavailable state -- which is what the IAP review screenshot Apple sees then
+ * shows, in place of a buy button.
+ *
+ * This app lists several plans rather than one, so the fallback is a list of
+ * one: the lifetime purchase at the price in `scripts/iap.json`, read from the
+ * App Store Connect price schedule.
+ *
+ * `__DEV__` is what makes it safe -- false in every release build, so a
+ * fabricated package cannot reach anyone who could buy it.
+ */
+function capturePriceFallback(): PurchasesPackage[] {
+  const price = process.env.EXPO_PUBLIC_CAPTURE_PRICE;
+  if (!isCaptureMode() || !price) return [];
+  const amount = Number(price.replace(/[^0-9.]/g, '')) || 0;
+  return [
+    {
+      identifier: 'lifetime',
+      packageType: 'LIFETIME',
+      offeringIdentifier: 'capture',
+      product: {
+        identifier: 'capture.lifetime',
+        priceString: price.startsWith('$') ? price : `$${price}`,
+        price: amount,
+        currencyCode: 'USD',
+      },
+    } as unknown as PurchasesPackage,
+  ];
+}
+
 /** Offering packages ordered best-value first. */
 export function orderedPackages(offering: PurchasesOffering | null): PurchasesPackage[] {
-  if (!offering) return [];
+  if (!offering) return capturePriceFallback();
   const byId = new Map(offering.availablePackages.map((p) => [p.identifier, p]));
-  return sortPlans(offering.availablePackages.map(toPlanLike))
+  const ordered = sortPlans(offering.availablePackages.map(toPlanLike))
     .map((plan) => byId.get(plan.identifier))
     .filter((p): p is PurchasesPackage => p !== undefined);
+  return ordered.length > 0 ? ordered : capturePriceFallback();
 }
 
 export interface PurchaseResult {
