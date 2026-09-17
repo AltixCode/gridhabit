@@ -19,6 +19,7 @@ import {
 import { toPlanLike } from '@/monetization/purchases';
 import { usePremiumStore } from '@/store/usePremiumStore';
 import { useTheme, withAlpha } from '@/theme';
+import { useTabletColumn } from '../src/theme/useTabletColumn';
 
 const BENEFITS: { icon: keyof typeof Feather.glyphMap; title: string; body: string }[] = [
   {
@@ -45,6 +46,7 @@ const BENEFITS: { icon: keyof typeof Feather.glyphMap; title: string; body: stri
 
 export default function PaywallScreen() {
   const router = useRouter();
+  const tabletColumn = useTabletColumn(640);
   const insets = useSafeAreaInsets();
   const { colors, radius, spacing } = useTheme();
   const { reason } = useLocalSearchParams<{ reason?: PaywallReason }>();
@@ -121,7 +123,7 @@ export default function PaywallScreen() {
           paddingHorizontal: spacing.lg,
           paddingBottom: spacing.xl,
           gap: spacing.xl,
-        }}
+         ...tabletColumn, flexGrow: 1, justifyContent: 'center' }}
         showsVerticalScrollIndicator={false}
       >
         <View style={{ gap: spacing.sm }}>
