@@ -1,6 +1,6 @@
 import { fireEvent } from '@testing-library/react-native';
 import React from 'react';
-import { Text as RNText } from 'react-native';
+import { StyleSheet, Text as RNText } from 'react-native';
 
 import { MIN_TOUCH_TARGET } from '@/theme';
 
@@ -220,5 +220,22 @@ describe('SettingsGroup, Card, Screen, StatTile, EmptyState', () => {
       <EmptyState icon="archive" title="Nothing archived" body="Archive a habit to see it here." />,
     );
     expect(plain.getByText('Nothing archived')).toBeTruthy();
+  });
+
+  it('centres the empty-state action rather than leaving it hard left', async () => {
+    // Button defaults to alignSelf 'flex-start' when not fullWidth, which silently beats the
+    // EmptyState container's alignItems 'center'. The CTA then sits hard left, orphaned from
+    // the centred icon and copy. Invisible at phone width, glaring on a tablet.
+    const { getByLabelText } = await renderWithProviders(
+      <EmptyState
+        icon="grid"
+        title="Start your first grid"
+        body="Add a habit."
+        actionLabel="Add a habit"
+        onAction={jest.fn()}
+      />,
+    );
+    const flattened = StyleSheet.flatten(getByLabelText('Add a habit').props.style);
+    expect(flattened.alignSelf).toBe('center');
   });
 });
