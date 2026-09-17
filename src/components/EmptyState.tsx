@@ -40,7 +40,15 @@ export function EmptyState({ icon, title, body, actionLabel, onAction }: EmptySt
         </Text>
       </View>
       {actionLabel && onAction ? (
-        <Button label={actionLabel} icon="plus" onPress={onAction} style={{ marginTop: spacing.sm }} />
+        <Button
+          label={actionLabel}
+          icon="plus"
+          onPress={onAction}
+          // Button hardcodes alignSelf 'flex-start' when not fullWidth, which overrides this
+          // container's alignItems 'center'. Without an explicit alignSelf the CTA lands hard
+          // left, orphaned from the centred icon and copy -- very visible on a wide screen.
+          style={{ marginTop: spacing.sm, alignSelf: 'center' }}
+        />
       ) : null}
     </View>
   );
