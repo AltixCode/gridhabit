@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import type { DateKey } from '@/logic/dates';
 import type { Frequency } from '@/logic/frequency';
 import { buildContributionGrid, type GridCell } from '@/logic/grid';
-import { mix, useTheme } from '@/theme';
+import { mix, useTheme, withAlpha } from '@/theme';
 
 interface MiniGridProps {
   completions: readonly DateKey[];
@@ -38,7 +38,20 @@ function MiniGridComponent({
   );
 
   const fillFor = (cell: GridCell): string => {
-    if (cell.isBeforeStart || cell.isFuture) return 'transparent';
+    // A day before the habit existed, or still to come, is drawn as an empty
+    // cell rather than as nothing.
+    //
+    // It used to return 'transparent', which meant a habit created today
+    // rendered 97 of its 98 cells invisible: a large empty band with one faint
+    // square in it, on the home screen of a fresh install -- which is the only
+    // state an App Store reviewer ever sees. The row reserved the full grid
+    // height either way, so the space was spent and showed nothing.
+    //
+    // Drawing the scaffold is what GitHub's contribution graph does, and this
+    // component already computes every one of those cells. A future day is
+    // dimmer than a past one so the grid still reads as "up to today".
+    if (cell.isFuture) return withAlpha(colors.gridEmpty, 0.45);
+    if (cell.isBeforeStart) return colors.gridEmpty;
     if (cell.completed) return mix(color, colors.surface, cell.intensity);
     if (cell.isMissed) return colors.gridMissed;
     return colors.gridEmpty;

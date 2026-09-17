@@ -1,6 +1,6 @@
 import Feather from '@expo/vector-icons/Feather';
 import { Link } from 'expo-router';
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import type { Habit } from '@/db/types';
@@ -21,7 +21,27 @@ interface HabitCardProps {
   onToggleToday: (habitId: string) => void;
 }
 
+
+/**
+ * How many weeks of history fit the width we were given.
+ *
+ * A column is one cell plus its gap. Clamped so a narrow phone still shows a
+ * meaningful stretch and a very wide tablet does not render a year of history
+ * nobody asked for. Returns the previous fixed value until the row has been
+ * measured, so the first frame is never empty.
+ */
+const CELL = 9;
+const GAP = 2.5;
+const DEFAULT_WEEKS = 14;
+
+export function weeksForWidth(width: number): number {
+  if (!width) return DEFAULT_WEEKS;
+  const fits = Math.floor(width / (CELL + GAP));
+  return Math.max(8, Math.min(30, fits));
+}
+
 function HabitCardComponent({ habit, completions, today, onToggleToday }: HabitCardProps) {
+  const [gridWidth, setGridWidth] = useState(0);
   const { colors, radius, spacing, elevation } = useTheme();
 
   const streak = useMemo(
@@ -90,13 +110,21 @@ function HabitCardComponent({ habit, completions, today, onToggleToday }: HabitC
           />
         </View>
 
-        <MiniGrid
-          completions={completions}
-          frequency={habit.frequency}
-          createdAt={habit.createdAt}
-          today={today}
-          color={habit.color}
-        />
+        {/* The grid takes the weeks the row can actually show.
+            14 was hardcoded, so on a wide tablet it occupied a fixed 161pt of
+            an 880pt row and left the rest empty -- the same shape of problem on
+            an Android tablet, which is why this is derived from measured width
+            rather than from a device breakpoint. */}
+        <View style={{ flex: 1 }} onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}>
+          <MiniGrid
+            completions={completions}
+            frequency={habit.frequency}
+            createdAt={habit.createdAt}
+            today={today}
+            color={habit.color}
+            weeks={weeksForWidth(gridWidth)}
+          />
+        </View>
       </Pressable>
     </Link>
   );
