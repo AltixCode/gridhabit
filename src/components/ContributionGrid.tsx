@@ -2,7 +2,9 @@ import * as Haptics from 'expo-haptics';
 import React, { memo, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { WEEKDAY_LABELS, formatDateKeyLong, type DateKey } from '@/logic/dates';
+import { getDeviceLanguage, t } from '@/i18n';
+import { weekdayNarrow } from '@/i18n/frequency';
+import { formatDateKeyLong, type DateKey } from '@/logic/dates';
 import type { Frequency } from '@/logic/frequency';
 import { buildContributionGrid, gridMonthLabels, type GridCell } from '@/logic/grid';
 import { mix, useTheme } from '@/theme';
@@ -55,7 +57,10 @@ function ContributionGridComponent({
     () => buildContributionGrid(completions, { today, createdAt, frequency, weeks }),
     [completions, today, createdAt, frequency, weeks],
   );
-  const monthLabels = useMemo(() => (showLabels ? gridMonthLabels(grid) : []), [grid, showLabels]);
+  const monthLabels = useMemo(
+    () => (showLabels ? gridMonthLabels(grid, getDeviceLanguage()) : []),
+    [grid, showLabels],
+  );
 
   const columnWidth = cellSize + gap;
   const cellRadius = Math.max(2, Math.round(cellSize * 0.28));
@@ -71,12 +76,12 @@ function ContributionGridComponent({
     <View style={styles.row}>
       {showLabels ? (
         <View style={{ marginRight: gap * 2, paddingTop: monthLabels.length ? 18 : 0 }}>
-          {WEEKDAY_LABELS.map((label, index) => (
-            <View key={label} style={{ height: cellSize, marginBottom: gap, justifyContent: 'center' }}>
+          {([0, 1, 2, 3, 4, 5, 6] as const).map((index) => (
+            <View key={index} style={{ height: cellSize, marginBottom: gap, justifyContent: 'center' }}>
               {/* GitHub labels alternate rows to avoid a cramped axis. */}
               {index % 2 === 1 ? (
                 <Text variant="micro" tone="faint">
-                  {label.slice(0, 1)}
+                  {weekdayNarrow(index)}
                 </Text>
               ) : null}
             </View>
@@ -117,9 +122,16 @@ function ContributionGridComponent({
                     // a dense data view. hitSlop restores a usable touch area.
                     hitSlop={Math.max(0, Math.round((44 - cellSize) / 2))}
                     accessibilityRole={interactive ? 'button' : 'image'}
-                    accessibilityLabel={`${formatDateKeyLong(cell.date)}: ${
-                      cell.completed ? 'completed' : cell.isMissed ? 'missed' : 'not due'
-                    }`}
+                    accessibilityLabel={t('gridCellA11y', {
+                      date: formatDateKeyLong(cell.date, getDeviceLanguage()),
+                      state: t(
+                        cell.completed
+                          ? 'cellStateCompleted'
+                          : cell.isMissed
+                            ? 'cellStateMissed'
+                            : 'cellStateNotDue',
+                      ),
+                    })}
                     accessibilityState={{ selected: cell.completed }}
                     style={({ pressed }) => ({
                       width: cellSize,

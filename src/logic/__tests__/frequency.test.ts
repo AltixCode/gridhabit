@@ -98,10 +98,16 @@ describe('parseFrequency / serializeFrequency', () => {
 });
 
 describe('describeFrequency', () => {
-  it('produces a short human label for each shape', () => {
-    expect(describeFrequency(daily)).toBe('Every day');
-    expect(describeFrequency(threeTimesWeekly)).toBe('3× per week');
-    expect(describeFrequency(mwf)).toBe('Mon, Wed, Fri');
-    expect(describeFrequency({ type: 'custom', days: [] })).toBe('No days selected');
+  it('produces a translatable descriptor for each shape', () => {
+    // A descriptor, not prose: this file cannot import `t()`, which lives
+    // behind `expo-localization`. `src/i18n/frequency.test.ts` covers the
+    // English text `frequencyLabel` builds from these.
+    expect(describeFrequency(daily)).toEqual({ kind: 'everyDay' });
+    expect(describeFrequency(threeTimesWeekly)).toEqual({ kind: 'timesPerWeek', n: 3 });
+    expect(describeFrequency(mwf)).toEqual({ kind: 'customDays', days: [1, 3, 5] });
+    expect(describeFrequency({ type: 'custom', days: [] })).toEqual({ kind: 'noDaysSelected' });
+    expect(describeFrequency({ type: 'custom', days: [0, 1, 2, 3, 4, 5, 6] })).toEqual({
+      kind: 'everyDay',
+    });
   });
 });

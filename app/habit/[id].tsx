@@ -14,7 +14,8 @@ import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { useDb } from '@/hooks/useHabitData';
 import { useToday } from '@/hooks/useToday';
-import { describeFrequency } from '@/logic/frequency';
+import { t } from '@/i18n';
+import { frequencyLabel } from '@/i18n/frequency';
 import { summarizeHabit } from '@/logic/streak';
 import { cancelHabitReminders } from '@/notifications/reminders';
 import { selectCompletions, useHabitsStore } from '@/store/useHabitsStore';
@@ -62,12 +63,12 @@ export default function HabitDetailScreen() {
   const handleDelete = useCallback(() => {
     if (!habit) return;
     Alert.alert(
-      `Delete “${habit.name}”?`,
-      'This permanently removes the habit and its entire history. This cannot be undone.',
+      t('deleteConfirmTitle', { name: habit.name }),
+      t('deleteConfirmBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('delete'),
           style: 'destructive',
           onPress: () => {
             void cancelHabitReminders(habit.notificationId);
@@ -83,7 +84,7 @@ export default function HabitDetailScreen() {
     return (
       <Screen>
         <Text variant="body" tone="muted">
-          This habit is no longer available.
+          {t('habitNoLongerAvailable')}
         </Text>
       </Screen>
     );
@@ -97,7 +98,7 @@ export default function HabitDetailScreen() {
           headerRight: () => (
             <IconButton
               icon="edit-2"
-              accessibilityLabel="Edit habit"
+              accessibilityLabel={t('editHabitA11y')}
               onPress={() => router.push({ pathname: '/habit/edit/[id]', params: { id: habit.id } })}
             />
           ),
@@ -114,14 +115,14 @@ export default function HabitDetailScreen() {
               />
             ) : null}
             <Text variant="caption" tone="muted">
-              {describeFrequency(habit.frequency)}
+              {frequencyLabel(habit.frequency)}
             </Text>
           </View>
           <Text variant="numeric" color={habit.color} style={{ fontVariant: ['tabular-nums'] }}>
             {streakLabel(summary.currentStreak, habit.frequency)}
           </Text>
           <Text variant="caption" tone="muted">
-            {summary.currentStreak > 0 ? 'Current streak' : 'Complete today to start a streak'}
+            {summary.currentStreak > 0 ? t('currentStreakLabel') : t('completeTodayToStart')}
           </Text>
         </View>
 
@@ -136,26 +137,26 @@ export default function HabitDetailScreen() {
             onToggleDay={handleToggleDay}
           />
           <Text variant="micro" tone="faint" style={{ marginTop: spacing.md }}>
-            Tap any past day to correct it.
+            {t('tapToCorrect')}
           </Text>
         </Card>
 
         <View style={{ flexDirection: 'row', gap: spacing.sm }}>
           <StatTile
             icon="award"
-            label="Longest"
+            label={t('statLongest')}
             value={String(summary.longestStreak)}
             tint={habit.color}
           />
           <StatTile
             icon="check-circle"
-            label="Total"
+            label={t('statTotal')}
             value={String(summary.totalCompletions)}
             tint={habit.color}
           />
           <StatTile
             icon="percent"
-            label="Rate"
+            label={t('statRate')}
             value={`${Math.round(summary.completionRate * 100)}%`}
             tint={habit.color}
           />
@@ -163,14 +164,14 @@ export default function HabitDetailScreen() {
 
         <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
           <Button
-            label={habit.archived ? 'Unarchive habit' : 'Archive habit'}
+            label={habit.archived ? t('unarchiveHabitCta') : t('archiveHabitCta')}
             variant="secondary"
             icon="archive"
             fullWidth
             onPress={handleArchive}
           />
           <Button
-            label="Delete habit"
+            label={t('deleteHabitCta')}
             variant="ghost"
             icon="trash-2"
             fullWidth

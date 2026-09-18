@@ -9,10 +9,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/Button';
 import { IconButton } from '@/components/ui/IconButton';
 import { Text } from '@/components/ui/Text';
+import { t, type TranslationKey } from '@/i18n';
+import { planCadence, planTitle } from '@/i18n/plan';
 import { PRIVACY_POLICY_URL, TERMS_URL } from '@/monetization/config';
 import {
   FREE_HABIT_LIMIT,
-  paywallReasonFor,
+  paywallReasonKeyFor,
   summarizePlan,
   type PaywallReason,
 } from '@/monetization/entitlements';
@@ -21,27 +23,11 @@ import { usePremiumStore } from '@/store/usePremiumStore';
 import { useTheme, withAlpha } from '@/theme';
 import { useTabletColumn } from '../src/theme/useTabletColumn';
 
-const BENEFITS: { icon: keyof typeof Feather.glyphMap; title: string; body: string }[] = [
-  {
-    icon: 'zap-off',
-    title: 'No ads, ever',
-    body: 'One tap, and the banner is gone for good.',
-  },
-  {
-    icon: 'grid',
-    title: 'Unlimited habits',
-    body: `Go past the ${FREE_HABIT_LIMIT}-habit free limit.`,
-  },
-  {
-    icon: 'gift',
-    title: 'Every future feature',
-    body: 'Buy it once and new features arrive included.',
-  },
-  {
-    icon: 'download',
-    title: 'Export your history',
-    body: 'Your data stays yours — CSV or JSON, any time.',
-  },
+const BENEFITS: { icon: keyof typeof Feather.glyphMap; titleKey: TranslationKey; bodyKey: TranslationKey }[] = [
+  { icon: 'zap-off', titleKey: 'benefit1Title', bodyKey: 'benefit1Body' },
+  { icon: 'grid', titleKey: 'benefit2Title', bodyKey: 'benefit2Body' },
+  { icon: 'gift', titleKey: 'benefit3Title', bodyKey: 'benefit3Body' },
+  { icon: 'download', titleKey: 'benefit4Title', bodyKey: 'benefit4Body' },
 ];
 
 export default function PaywallScreen() {
@@ -84,19 +70,19 @@ export default function PaywallScreen() {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.back();
     } else if (status === 'error') {
-      Alert.alert('Purchase failed', usePremiumStore.getState().error ?? 'Please try again.');
+      Alert.alert(t('purchaseFailedTitle'), usePremiumStore.getState().error ?? t('pleaseTryAgain'));
     }
   }, [purchase, router, selected]);
 
   const handleRestore = useCallback(async () => {
     const status = await restore();
     if (status === 'purchased') {
-      Alert.alert('Restored', 'Your GridHabit Pro purchase is active again.');
+      Alert.alert(t('restored'), t('restoredProBodyPaywall'));
       router.back();
     } else if (status === 'none') {
-      Alert.alert('Nothing to restore', 'We could not find a previous purchase on this account.');
+      Alert.alert(t('nothingToRestoreTitle'), t('nothingToRestorePaywallBody'));
     } else {
-      Alert.alert('Restore failed', usePremiumStore.getState().error ?? 'Please try again.');
+      Alert.alert(t('restoreFailedTitle'), usePremiumStore.getState().error ?? t('pleaseTryAgain'));
     }
   }, [restore, router]);
 
@@ -106,7 +92,7 @@ export default function PaywallScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingTop: insets.top + spacing.xs, paddingHorizontal: spacing.sm }}>
-        <IconButton icon="x" accessibilityLabel="Close" onPress={() => router.back()} />
+        <IconButton icon="x" accessibilityLabel={t('close')} onPress={() => router.back()} />
       </View>
 
       {/* `flex: 1`, or this scroll view and the element pinned below it fight
@@ -130,18 +116,18 @@ export default function PaywallScreen() {
           <View style={[styles.badge, { backgroundColor: withAlpha(colors.accent, 0.14), borderRadius: radius.full }]}>
             <Feather name="award" size={13} color={colors.accent} />
             <Text variant="micro" tone="accent">
-              GRIDHABIT PRO
+              {t('paywallBadge').toUpperCase()}
             </Text>
           </View>
-          <Text variant="display">Own it once.{'\n'}Keep it forever.</Text>
+          <Text variant="display">{t('paywallHeadline')}</Text>
           <Text variant="body" tone="muted">
-            {paywallReasonFor(reason ?? 'generic')}
+            {t(paywallReasonKeyFor(reason ?? 'generic'), { n: FREE_HABIT_LIMIT })}
           </Text>
         </View>
 
         <View style={{ gap: spacing.base }}>
           {BENEFITS.map((benefit) => (
-            <View key={benefit.title} style={[styles.benefit, { gap: spacing.md }]}>
+            <View key={benefit.titleKey} style={[styles.benefit, { gap: spacing.md }]}>
               <View
                 style={{
                   width: 36,
@@ -155,9 +141,9 @@ export default function PaywallScreen() {
                 <Feather name={benefit.icon} size={17} color={colors.accent} />
               </View>
               <View style={{ flex: 1, gap: 1 }}>
-                <Text variant="bodyStrong">{benefit.title}</Text>
+                <Text variant="bodyStrong">{t(benefit.titleKey)}</Text>
                 <Text variant="caption" tone="muted">
-                  {benefit.body}
+                  {t(benefit.bodyKey, { n: FREE_HABIT_LIMIT })}
                 </Text>
               </View>
             </View>
@@ -167,9 +153,9 @@ export default function PaywallScreen() {
         {packages.length === 0 ? (
           <View style={{ gap: spacing.sm }}>
             <Text variant="callout" tone="muted" align="center">
-              Plans are unavailable right now. Check your connection and try again.
+              {t('plansUnavailable')}
             </Text>
-            <Button label="Retry" variant="secondary" fullWidth onPress={() => void refreshOfferings()} />
+            <Button label={t('retry')} variant="secondary" fullWidth onPress={() => void refreshOfferings()} />
           </View>
         ) : (
           <View style={{ gap: spacing.sm }}>
@@ -201,7 +187,7 @@ export default function PaywallScreen() {
         }}
       >
         <Button
-          label={selected && summarizePlan(toPlanLike(selected)).isLifetime ? 'Upgrade for life' : 'Continue'}
+          label={selected && summarizePlan(toPlanLike(selected)).isLifetime ? t('upgradeForLifeCta') : t('continueCta')}
           size="lg"
           fullWidth
           disabled={!selected}
@@ -213,29 +199,28 @@ export default function PaywallScreen() {
         <View style={[styles.links, { gap: spacing.base }]}>
           <Pressable onPress={() => void handleRestore()} hitSlop={10} accessibilityRole="button">
             <Text variant="caption" tone="muted">
-              Restore purchases
+              {t('restorePurchasesLabel')}
             </Text>
           </Pressable>
           <Pressable onPress={() => void Linking.openURL(TERMS_URL)} hitSlop={10} accessibilityRole="link">
             <Text variant="caption" tone="muted">
-              Terms
+              {t('termsLinkLabel')}
             </Text>
           </Pressable>
           <Pressable onPress={() => void Linking.openURL(PRIVACY_POLICY_URL)} hitSlop={10} accessibilityRole="link">
             <Text variant="caption" tone="muted">
-              Privacy
+              {t('privacyLinkLabel')}
             </Text>
           </Pressable>
         </View>
 
         {isSubscriptionSelected ? (
           <Text variant="micro" tone="faint" align="center">
-            Subscriptions renew automatically until cancelled. Manage or cancel any time in your
-            store account settings.
+            {t('subscriptionDisclaimer')}
           </Text>
         ) : (
           <Text variant="micro" tone="faint" align="center">
-            One payment. No subscription. Yours on every device signed in to this store account.
+            {t('onePaymentDisclaimer')}
           </Text>
         )}
       </View>
@@ -257,13 +242,15 @@ function PlanOption({
   const { colors, radius, spacing } = useTheme();
   const plan = toPlanLike(pkg);
   const summary = summarizePlan(plan, monthlyBaseline);
+  const title = planTitle(plan);
+  const cadence = planCadence(plan);
 
   return (
     <Pressable
       onPress={onSelect}
       accessibilityRole="radio"
       accessibilityState={{ selected }}
-      accessibilityLabel={`${summary.title}, ${plan.priceString}, ${summary.cadence}`}
+      accessibilityLabel={t('planOptionA11y', { title, price: plan.priceString, cadence })}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -282,12 +269,12 @@ function PlanOption({
       />
       <View style={{ flex: 1, gap: 2 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-          <Text variant="bodyStrong">{summary.title}</Text>
-          {summary.isLifetime ? <Pill label="BEST VALUE" /> : null}
-          {summary.savingsPercent ? <Pill label={`SAVE ${summary.savingsPercent}%`} /> : null}
+          <Text variant="bodyStrong">{title}</Text>
+          {summary.isLifetime ? <Pill label={t('bestValueBadge')} /> : null}
+          {summary.savingsPercent ? <Pill label={t('savePercentBadge', { percent: summary.savingsPercent })} /> : null}
         </View>
         <Text variant="caption" tone="muted">
-          {summary.cadence}
+          {cadence}
         </Text>
       </View>
       <Text variant="bodyStrong">{plan.priceString}</Text>

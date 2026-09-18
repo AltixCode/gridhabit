@@ -70,6 +70,11 @@ jest.mock('react-native-purchases', () => ({
   LOG_LEVEL: { WARN: 'WARN', DEBUG: 'DEBUG' },
 }));
 
+jest.mock('expo-localization', () => ({
+  getLocales: jest.fn(() => [{ languageCode: 'en', regionCode: 'US' }]),
+  getCalendars: jest.fn(() => []),
+}));
+
 jest.mock('expo-tracking-transparency', () => ({
   getTrackingPermissionsAsync: jest.fn().mockResolvedValue({ granted: false, canAskAgain: true }),
   requestTrackingPermissionsAsync: jest.fn().mockResolvedValue({ granted: false }),

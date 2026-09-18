@@ -1,5 +1,4 @@
 import {
-  WEEKDAY_LABELS,
   compareDateKeys,
   eachDayInRange,
   weekdayOf,
@@ -94,17 +93,31 @@ export function parseFrequency(raw: string | null | undefined): Frequency {
   }
 }
 
-/** A short human label for the frequency, e.g. `Mon, Wed, Fri`. */
-export function describeFrequency(frequency: Frequency): string {
+/**
+ * A structured description of the frequency, for a caller to translate.
+ *
+ * Returns a descriptor rather than prose: this file imports nothing from
+ * `react`, `react-native` or `expo-*` (so its rules are iterable from
+ * `npm test` alone), and `t()` lives behind `expo-localization`. The English
+ * sentence is built by `frequencyLabel` in `src/i18n/frequency.ts`, which is
+ * free to import both.
+ */
+export type FrequencyDescriptor =
+  | { kind: 'everyDay' }
+  | { kind: 'timesPerWeek'; n: number }
+  | { kind: 'noDaysSelected' }
+  | { kind: 'customDays'; days: Weekday[] };
+
+export function describeFrequency(frequency: Frequency): FrequencyDescriptor {
   switch (frequency.type) {
     case 'daily':
-      return 'Every day';
+      return { kind: 'everyDay' };
     case 'weekly':
-      return `${frequency.timesPerWeek}× per week`;
+      return { kind: 'timesPerWeek', n: frequency.timesPerWeek };
     case 'custom': {
-      if (frequency.days.length === 0) return 'No days selected';
-      if (frequency.days.length === 7) return 'Every day';
-      return frequency.days.map((d) => WEEKDAY_LABELS[d]).join(', ');
+      if (frequency.days.length === 0) return { kind: 'noDaysSelected' };
+      if (frequency.days.length === 7) return { kind: 'everyDay' };
+      return { kind: 'customDays', days: frequency.days };
     }
   }
 }

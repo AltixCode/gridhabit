@@ -6,6 +6,7 @@ import { HabitForm, type HabitFormValues } from '@/components/HabitForm';
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { useDb } from '@/hooks/useHabitData';
+import { t } from '@/i18n';
 import { syncHabitReminders } from '@/notifications/reminders';
 import { useHabitsStore } from '@/store/useHabitsStore';
 import { useTheme } from '@/theme';
@@ -32,7 +33,7 @@ export default function EditHabitScreen() {
         await editHabit(db, habit.id, { notificationId });
         router.back();
       } catch (error) {
-        Alert.alert('Could not save changes', (error as Error).message);
+        Alert.alert(t('couldNotSaveChangesTitle'), (error as Error).message);
       } finally {
         setBusy(false);
       }
@@ -44,7 +45,7 @@ export default function EditHabitScreen() {
     return (
       <Screen>
         <Text variant="body" tone="muted">
-          This habit is no longer available.
+          {t('habitNoLongerAvailable')}
         </Text>
       </Screen>
     );
@@ -52,7 +53,7 @@ export default function EditHabitScreen() {
 
   return (
     <Screen scroll contentContainerStyle={{ paddingTop: spacing.base }}>
-      <HabitForm initial={habit} submitLabel="Save changes" onSubmit={handleSubmit} busy={busy} />
+      <HabitForm initial={habit} submitLabel={t('saveChangesCta')} onSubmit={handleSubmit} busy={busy} />
     </Screen>
   );
 }
