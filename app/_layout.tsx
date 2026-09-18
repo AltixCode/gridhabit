@@ -3,11 +3,12 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React, { Suspense, useEffect } from 'react';
-import { ActivityIndicator, LogBox, View } from 'react-native';
+import { ActivityIndicator, I18nManager, LogBox, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { DATABASE_NAME, initializeDatabase } from '@/db/database';
+import { isRTLLanguage } from '@/i18n';
 import { bootstrapAds } from '@/monetization/ads';
 import { shouldShowAds } from '@/monetization/entitlements';
 import { ensureAndroidChannel } from '@/notifications/reminders';
@@ -15,6 +16,12 @@ import { usePremiumStore } from '@/store/usePremiumStore';
 import { ThemeProvider, useTheme } from '@/theme';
 
 void SplashScreen.preventAutoHideAsync();
+
+// Arabic and Persian must actually mirror the layout, not merely translate. This
+// runs at module scope because React Native reads the flag when the first view
+// is laid out -- setting it from an effect leaves the first frame LTR.
+I18nManager.allowRTL(true);
+I18nManager.forceRTL(isRTLLanguage());
 
 function Fallback() {
   const { colors } = useTheme();

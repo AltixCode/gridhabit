@@ -9,6 +9,7 @@ import { shareExport } from '@/export/shareExport';
 import type { ExportFormat } from '@/export/serialize';
 import { useDb } from '@/hooks/useHabitData';
 import { useToday } from '@/hooks/useToday';
+import { t, type TranslationKey } from '@/i18n';
 import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
@@ -25,10 +26,10 @@ import { useAdsConsentStore } from '@/store/useAdsConsentStore';
 import { usePremiumStore } from '@/store/usePremiumStore';
 import { useTheme, type ThemePreference } from '@/theme';
 
-const THEME_LABELS: Record<ThemePreference, string> = {
-  system: 'Match system',
-  light: 'Light',
-  dark: 'Dark',
+const THEME_LABEL_KEY: Record<ThemePreference, TranslationKey> = {
+  system: 'themeSystem',
+  light: 'themeLight',
+  dark: 'themeDark',
 };
 
 export default function SettingsScreen() {
@@ -70,11 +71,11 @@ export default function SettingsScreen() {
       setExporting(null);
 
       if (result.status === 'empty') {
-        Alert.alert('Nothing to export', 'Add a habit first.');
+        Alert.alert(t('exportEmptyTitle'), t('addHabitFirstBody'));
       } else if (result.status === 'unavailable') {
-        Alert.alert('Sharing unavailable', 'This device cannot share files.');
+        Alert.alert(t('sharingUnavailableTitle'), t('cannotShareFilesBody'));
       } else if (result.status === 'error') {
-        Alert.alert('Export failed', result.message);
+        Alert.alert(t('exportFailedTitle'), result.message);
       }
     },
     [db, isPremium, router, today],
@@ -82,9 +83,9 @@ export default function SettingsScreen() {
 
   const handleRestore = useCallback(async () => {
     const status = await restore();
-    if (status === 'purchased') Alert.alert('Restored', 'GridHabit Pro is active.');
-    else if (status === 'none') Alert.alert('Nothing to restore', 'No previous purchase found.');
-    else Alert.alert('Restore failed', 'Please try again.');
+    if (status === 'purchased') Alert.alert(t('restored'), t('gridHabitProActiveBody'));
+    else if (status === 'none') Alert.alert(t('nothingToRestoreTitle'), t('noPreviousPurchaseBody'));
+    else Alert.alert(t('restoreFailedTitle'), t('pleaseTryAgain'));
   }, [restore]);
 
   const openManageSubscription = useCallback(() => {
@@ -96,10 +97,10 @@ export default function SettingsScreen() {
   }, []);
 
   const handleDisableAllReminders = useCallback(() => {
-    Alert.alert('Turn off all reminders?', 'You can re-enable them per habit at any time.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('turnOffAllRemindersTitle'), t('turnOffAllRemindersBody'), [
+      { text: t('cancel'), style: 'cancel' },
       {
-        text: 'Turn off',
+        text: t('turnOffAction'),
         style: 'destructive',
         onPress: () => void cancelAllReminders(),
       },
@@ -112,17 +113,17 @@ export default function SettingsScreen() {
     try {
       await seedDemoData(db, today);
       await loadHabits(db);
-      Alert.alert('Seeded', 'Demo habits with synthetic history are in place.');
+      Alert.alert(t('seededTitle'), t('seededBody'));
     } catch (error) {
-      Alert.alert('Could not seed', (error as Error).message);
+      Alert.alert(t('couldNotSeedTitle'), (error as Error).message);
     }
   }, [db, loadHabits, today]);
 
   const handleClear = useCallback(() => {
-    Alert.alert('Delete all data?', 'This wipes every habit and completion.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('deleteAllDataTitle'), t('deleteAllDataBody'), [
+      { text: t('cancel'), style: 'cancel' },
       {
-        text: 'Delete everything',
+        text: t('deleteEverythingAction'),
         style: 'destructive',
         onPress: () => {
           void clearAllData(db).then(() => loadHabits(db));
@@ -136,19 +137,18 @@ export default function SettingsScreen() {
       {!isPremium ? (
         <Card>
           <View style={{ gap: spacing.sm }}>
-            <Text variant="heading">Go Pro, once</Text>
+            <Text variant="heading">{t('goProTitle')}</Text>
             <Text variant="callout" tone="muted">
-              Remove ads for good, unlock unlimited habits and data export with a
-              single one-time payment.
+              {t('goProDesc')}
             </Text>
             <Text variant="caption" tone="faint">
               {slots === 0
-                ? `You are using all ${FREE_HABIT_LIMIT} free habits.`
-                : `${slots} of ${FREE_HABIT_LIMIT} free habits remaining.`}
+                ? t('usingAllFreeHabits', { n: FREE_HABIT_LIMIT })
+                : t('freeHabitsRemaining', { slots, n: FREE_HABIT_LIMIT })}
             </Text>
             <SettingsRow
               icon="award"
-              label="See plans"
+              label={t('seePlansLabel')}
               onPress={() => router.push({ pathname: '/paywall', params: { reason: 'remove-ads' } })}
             />
           </View>
@@ -156,70 +156,70 @@ export default function SettingsScreen() {
       ) : (
         <Card>
           <View style={{ gap: spacing.xs }}>
-            <Text variant="heading">GridHabit Pro</Text>
+            <Text variant="heading">{t('gridHabitProTitle')}</Text>
             <Text variant="callout" tone="muted">
-              Thank you. Ads are off and every feature is unlocked.
+              {t('gridHabitProThankYou')}
             </Text>
           </View>
         </Card>
       )}
 
-      <SettingsGroup title="Appearance">
+      <SettingsGroup title={t('appearanceGroupTitle')}>
         <SettingsRow
           icon="moon"
-          label="Theme"
-          value={THEME_LABELS[preference]}
+          label={t('themeRowLabel')}
+          value={t(THEME_LABEL_KEY[preference])}
           onPress={cycleTheme}
         />
       </SettingsGroup>
 
-      <SettingsGroup title="Habits">
+      <SettingsGroup title={t('habitsGroupTitle')}>
         <SettingsRow
           icon="list"
-          label="Reorder habits"
-          description="Arrange Today in the order you do them."
+          label={t('reorderHabitsLabel')}
+          description={t('reorderHabitsDesc')}
           onPress={() => router.push('/reorder')}
         />
         <Divider />
         <SettingsRow
           icon="archive"
-          label="Archived habits"
+          label={t('archivedHabitsLabel')}
           value={String(archivedCount)}
           onPress={() => router.push('/archive')}
         />
         <Divider />
         <SettingsRow
           icon="bell-off"
-          label="Turn off all reminders"
+          label={t('turnOffAllRemindersLabel')}
           onPress={handleDisableAllReminders}
         />
       </SettingsGroup>
 
-      <SettingsGroup title="Your data">
+      <SettingsGroup title={t('yourDataGroupTitle')}>
         <SettingsRow
           icon="file-text"
-          label="Export as CSV"
-          description="Opens in any spreadsheet."
-          value={exporting === 'csv' ? 'Preparing…' : isPremium ? undefined : 'Pro'}
+          label={t('exportCsvLabel')}
+          description={t('exportCsvDesc')}
+          value={exporting === 'csv' ? t('preparingLabel') : isPremium ? undefined : t('proLabel')}
           onPress={() => void handleExport('csv')}
           disabled={exporting !== null}
         />
         <Divider />
         <SettingsRow
           icon="code"
-          label="Export as JSON"
-          description="Complete history, including archived habits."
-          value={exporting === 'json' ? 'Preparing…' : isPremium ? undefined : 'Pro'}
+          label={t('exportJsonLabel')}
+          description={t('exportJsonDesc')}
+          value={exporting === 'json' ? t('preparingLabel') : isPremium ? undefined : t('proLabel')}
           onPress={() => void handleExport('json')}
           disabled={exporting !== null}
         />
       </SettingsGroup>
 
-      <SettingsGroup title="Purchases">
+      <SettingsGroup title={t('purchasesGroupTitle')}>
         <SettingsRow
           icon="refresh-cw"
-          label="Restore purchases"
-          description="Already bought Pro? Restore it here."
+          label={t('restorePurchasesLabel')}
+          description={t('restorePurchasesDesc')}
           onPress={() => void handleRestore()}
         />
         {isPremium ? (
@@ -227,21 +227,21 @@ export default function SettingsScreen() {
             <Divider />
             <SettingsRow
               icon="credit-card"
-              label="Manage subscription"
+              label={t('manageSubscriptionLabel')}
               onPress={openManageSubscription}
             />
           </>
         ) : null}
       </SettingsGroup>
 
-      <SettingsGroup title="About">
+      <SettingsGroup title={t('aboutGroupTitle')}>
         <SettingsRow
           icon="mail"
-          label="Contact support"
+          label={t('contactSupportLabel')}
           onPress={() => void Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=GridHabit ${version}`)}
         />
         <Divider />
-        <SettingsRow icon="shield" label="Privacy policy" onPress={() => void Linking.openURL(PRIVACY_POLICY_URL)} />
+        <SettingsRow icon="shield" label={t('privacyPolicyLabel')} onPress={() => void Linking.openURL(PRIVACY_POLICY_URL)} />
         {offerPrivacyOptions ? (
           <>
             <Divider />
@@ -250,28 +250,28 @@ export default function SettingsScreen() {
                 US states. It is absent elsewhere rather than shown as a dead control. */}
             <SettingsRow
               icon="sliders"
-              label="Ad privacy settings"
-              description="Change what ads may use."
+              label={t('adPrivacySettingsLabel')}
+              description={t('adPrivacySettingsDesc')}
               onPress={() => void showPrivacyOptionsForm()}
             />
           </>
         ) : null}
         <Divider />
-        <SettingsRow icon="file-text" label="Terms of use" onPress={() => void Linking.openURL(TERMS_URL)} />
+        <SettingsRow icon="file-text" label={t('termsOfUseLabel')} onPress={() => void Linking.openURL(TERMS_URL)} />
         <Divider />
-        <SettingsRow icon="info" label="Version" value={version} />
+        <SettingsRow icon="info" label={t('versionRowLabel')} value={version} />
       </SettingsGroup>
 
       {__DEV__ ? (
-        <SettingsGroup title="Developer">
+        <SettingsGroup title={t('developerGroupTitle')}>
           <SettingsRow
             icon="database"
-            label="Seed demo data"
-            description="Synthetic history for screenshots and dogfooding."
+            label={t('seedDemoDataLabel')}
+            description={t('seedDemoDataDesc')}
             onPress={() => void handleSeed()}
           />
           <Divider />
-          <SettingsRow icon="trash-2" label="Delete all data" destructive onPress={handleClear} />
+          <SettingsRow icon="trash-2" label={t('deleteAllDataLabel')} destructive onPress={handleClear} />
         </SettingsGroup>
       ) : null}
     </Screen>

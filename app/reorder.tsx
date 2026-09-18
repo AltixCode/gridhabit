@@ -8,7 +8,8 @@ import { IconButton } from '@/components/ui/IconButton';
 import { Screen } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { useDb } from '@/hooks/useHabitData';
-import { describeFrequency } from '@/logic/frequency';
+import { t } from '@/i18n';
+import { frequencyLabel } from '@/i18n/frequency';
 import { selectActiveHabits, useHabitsStore } from '@/store/useHabitsStore';
 import { useTheme } from '@/theme';
 import { canMove, moveItem, type MoveDirection } from '@/utils/reorder';
@@ -51,8 +52,8 @@ export default function ReorderScreen() {
       <Screen>
         <EmptyState
           icon="list"
-          title="Nothing to reorder"
-          body="Add a couple of habits and you can arrange them in the order you do them."
+          title={t('reorderEmptyTitle')}
+          body={t('reorderEmptyBody')}
         />
       </Screen>
     );
@@ -61,20 +62,24 @@ export default function ReorderScreen() {
   return (
     <Screen scroll contentContainerStyle={{ paddingTop: spacing.base, gap: spacing.sm }}>
       <Text variant="callout" tone="muted" style={{ marginBottom: spacing.xs }}>
-        Put your habits in the order you actually do them.
+        {t('reorderHint')}
       </Text>
 
       {ordered.map((habit, index) => (
         <View
           key={habit.id}
           accessible
-          accessibilityLabel={`${habit.name}, position ${index + 1} of ${ordered.length}`}
+          accessibilityLabel={t('reorderPositionA11y', {
+            name: habit.name,
+            position: index + 1,
+            total: ordered.length,
+          })}
           accessibilityActions={[
             ...(canMove(index, 'up', ordered.length)
-              ? [{ name: 'moveUp' as const, label: 'Move up' }]
+              ? [{ name: 'moveUp' as const, label: t('moveUpAction') }]
               : []),
             ...(canMove(index, 'down', ordered.length)
-              ? [{ name: 'moveDown' as const, label: 'Move down' }]
+              ? [{ name: 'moveDown' as const, label: t('moveDownAction') }]
               : []),
           ]}
           onAccessibilityAction={(event) => {
@@ -107,20 +112,20 @@ export default function ReorderScreen() {
               {habit.name}
             </Text>
             <Text variant="caption" tone="muted" numberOfLines={1}>
-              {describeFrequency(habit.frequency)}
+              {frequencyLabel(habit.frequency)}
             </Text>
           </View>
 
           <IconButton
             icon="chevron-up"
-            accessibilityLabel={`Move ${habit.name} up`}
+            accessibilityLabel={t('moveHabitUpA11y', { name: habit.name })}
             disabled={!canMove(index, 'up', ordered.length)}
             onPress={() => move(index, 'up')}
             color={canMove(index, 'up', ordered.length) ? colors.text : colors.textFaint}
           />
           <IconButton
             icon="chevron-down"
-            accessibilityLabel={`Move ${habit.name} down`}
+            accessibilityLabel={t('moveHabitDownA11y', { name: habit.name })}
             disabled={!canMove(index, 'down', ordered.length)}
             onPress={() => move(index, 'down')}
             color={canMove(index, 'down', ordered.length) ? colors.text : colors.textFaint}

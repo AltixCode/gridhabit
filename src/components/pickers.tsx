@@ -3,11 +3,49 @@ import * as Haptics from 'expo-haptics';
 import React from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
-import { WEEKDAY_LABELS, type Weekday } from '@/logic/dates';
+import { t, type TranslationKey } from '@/i18n';
+import { weekdayNarrow, weekdayShort } from '@/i18n/frequency';
+import type { Weekday } from '@/logic/dates';
 import type { Frequency } from '@/logic/frequency';
 import { HABIT_COLORS, MIN_TOUCH_TARGET, readableTextOn, useTheme, withAlpha } from '@/theme';
 
 import { Text } from './ui/Text';
+
+const COLOR_NAME_KEY: Record<string, TranslationKey> = {
+  Violet: 'colorViolet',
+  Indigo: 'colorIndigo',
+  Sky: 'colorSky',
+  Teal: 'colorTeal',
+  Green: 'colorGreen',
+  Lime: 'colorLime',
+  Amber: 'colorAmber',
+  Orange: 'colorOrange',
+  Rose: 'colorRose',
+  Plum: 'colorPlum',
+  Slate: 'colorSlate',
+  Crimson: 'colorCrimson',
+};
+
+const ICON_NAME_KEY: Record<string, TranslationKey> = {
+  activity: 'iconActivity',
+  'book-open': 'iconBookOpen',
+  coffee: 'iconCoffee',
+  droplet: 'iconDroplet',
+  'edit-3': 'iconEdit3',
+  feather: 'iconFeather',
+  heart: 'iconHeart',
+  home: 'iconHome',
+  moon: 'iconMoon',
+  music: 'iconMusic',
+  sun: 'iconSun',
+  target: 'iconTarget',
+  'trending-up': 'iconTrendingUp',
+  umbrella: 'iconUmbrella',
+  watch: 'iconWatch',
+  wind: 'iconWind',
+  zap: 'iconZap',
+  smile: 'iconSmile',
+};
 
 /** Curated Feather glyphs that read clearly at 15pt. No emoji — ever. */
 export const HABIT_ICONS: (keyof typeof Feather.glyphMap)[] = [
@@ -42,7 +80,7 @@ export function ColorPicker({
               onChange(color);
             }}
             accessibilityRole="radio"
-            accessibilityLabel={name}
+            accessibilityLabel={t(COLOR_NAME_KEY[name] ?? 'colorViolet')}
             accessibilityState={{ selected }}
             hitSlop={6}
             style={{
@@ -86,7 +124,7 @@ export function IconPicker({
               onChange(selected ? null : icon);
             }}
             accessibilityRole="radio"
-            accessibilityLabel={icon.replace(/-/g, ' ')}
+            accessibilityLabel={t(ICON_NAME_KEY[icon] ?? 'iconSmile')}
             accessibilityState={{ selected }}
             style={{
               width: MIN_TOUCH_TARGET,
@@ -144,9 +182,9 @@ export function FrequencyPicker({
   };
 
   const options: { kind: FrequencyKind; label: string }[] = [
-    { kind: 'daily', label: 'Daily' },
-    { kind: 'weekly', label: 'Times a week' },
-    { kind: 'custom', label: 'Specific days' },
+    { kind: 'daily', label: t('frequencyDaily') },
+    { kind: 'weekly', label: t('frequencyTimesAWeek') },
+    { kind: 'custom', label: t('frequencyCustomDays') },
   ];
 
   return (
@@ -187,15 +225,15 @@ export function FrequencyPicker({
 
       {value.type === 'custom' ? (
         <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-          {WEEKDAY_LABELS.map((label, index) => {
+          {([0, 1, 2, 3, 4, 5, 6] as const).map((index) => {
             const day = index as Weekday;
             const selected = value.days.includes(day);
             return (
               <Pressable
-                key={label}
+                key={day}
                 onPress={() => toggleDay(day)}
                 accessibilityRole="checkbox"
-                accessibilityLabel={label}
+                accessibilityLabel={weekdayShort(day)}
                 accessibilityState={{ checked: selected }}
                 style={{
                   flex: 1,
@@ -210,7 +248,7 @@ export function FrequencyPicker({
                   variant="caption"
                   color={selected ? readableTextOn(tint) : colors.textMuted}
                 >
-                  {label.slice(0, 1)}
+                  {weekdayNarrow(day)}
                 </Text>
               </Pressable>
             );
@@ -227,7 +265,7 @@ export function FrequencyPicker({
                 key={times}
                 onPress={() => setQuota(times)}
                 accessibilityRole="radio"
-                accessibilityLabel={`${times} times per week`}
+                accessibilityLabel={t('timesPerWeekA11y', { n: times })}
                 accessibilityState={{ selected }}
                 style={{
                   flex: 1,

@@ -1,5 +1,4 @@
 import {
-  MONTH_LABELS,
   addDays,
   compareDateKeys,
   isValidDateKey,
@@ -135,15 +134,22 @@ export function applyIntensity(
 /**
  * A month label per column, blank except on the first column of each month —
  * the sparse axis labelling GitHub uses.
+ *
+ * Built from `Intl.DateTimeFormat` for the same reason `formatDateKeyLong`
+ * is in `dates.ts`: it is a JS global, not an `expo-*` import, so this stays
+ * usable from a file this pure. The default keeps existing callers' English
+ * output unchanged.
  */
-export function gridMonthLabels(grid: ContributionGrid): string[] {
+export function gridMonthLabels(grid: ContributionGrid, locale = 'en'): string[] {
+  const formatter = new Intl.DateTimeFormat(locale, { month: 'short' });
   let previousMonth = -1;
   return grid.map((column) => {
     const first = column[0];
     if (!first) return '';
-    const month = parseDateKey(first.date).getMonth();
+    const date = parseDateKey(first.date);
+    const month = date.getMonth();
     if (month === previousMonth) return '';
     previousMonth = month;
-    return MONTH_LABELS[month] ?? '';
+    return formatter.format(date);
   });
 }

@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { Platform, Switch, View } from 'react-native';
 
 import type { Habit } from '@/db/types';
+import { t } from '@/i18n';
 import type { Frequency } from '@/logic/frequency';
 import { isNeverDue } from '@/logic/frequency';
 import { formatReminderTime, parseReminderTime } from '@/notifications/schedule';
@@ -66,10 +67,10 @@ export function HabitForm({ initial, submitLabel, onSubmit, busy = false }: Habi
   const error = useMemo(() => {
     // Deselecting every weekday is an explicit action, so explain it straight
     // away rather than leaving the user with a silently disabled button.
-    if (isNeverDue(frequency)) return 'Pick at least one day.';
+    if (isNeverDue(frequency)) return t('errorPickDay');
     if (!touched) return null;
-    if (name.trim().length === 0) return 'Give your habit a name.';
-    if (name.trim().length > 60) return 'Keep the name under 60 characters.';
+    if (name.trim().length === 0) return t('errorGiveName');
+    if (name.trim().length > 60) return t('errorNameTooLong');
     return null;
   }, [name, frequency, touched]);
 
@@ -91,11 +92,11 @@ export function HabitForm({ initial, submitLabel, onSubmit, busy = false }: Habi
   return (
     <View style={{ gap: spacing.xl }}>
       <TextField
-        label="Name"
+        label={t('nameFieldLabel')}
         value={name}
         onChangeText={setName}
         onBlur={() => setTouched(true)}
-        placeholder="Meditate, Read, Run…"
+        placeholder={t('namePlaceholder')}
         autoFocus={!initial}
         maxLength={60}
         returnKeyType="done"
@@ -104,21 +105,21 @@ export function HabitForm({ initial, submitLabel, onSubmit, busy = false }: Habi
 
       <View style={{ gap: spacing.md }}>
         <Text variant="caption" tone="muted">
-          Colour
+          {t('colourFieldLabel')}
         </Text>
         <ColorPicker value={color} onChange={setColor} />
       </View>
 
       <View style={{ gap: spacing.md }}>
         <Text variant="caption" tone="muted">
-          Icon (optional)
+          {t('iconFieldLabel')}
         </Text>
         <IconPicker value={icon} onChange={setIcon} tint={color} />
       </View>
 
       <View style={{ gap: spacing.md }}>
         <Text variant="caption" tone="muted">
-          Repeat
+          {t('repeatFieldLabel')}
         </Text>
         <FrequencyPicker value={frequency} onChange={setFrequency} tint={color} />
       </View>
@@ -126,13 +127,13 @@ export function HabitForm({ initial, submitLabel, onSubmit, busy = false }: Habi
       <Card padded={false}>
         <SettingsRow
           icon="bell"
-          label="Daily reminder"
-          description="A quiet nudge at the time you choose."
+          label={t('dailyReminderLabel')}
+          description={t('dailyReminderDesc')}
           accessory={
             <Switch
               value={reminderEnabled}
               onValueChange={setReminderEnabled}
-              accessibilityLabel="Enable daily reminder"
+              accessibilityLabel={t('enableDailyReminderA11y')}
               trackColor={{ true: color }}
             />
           }
@@ -155,7 +156,7 @@ export function HabitForm({ initial, submitLabel, onSubmit, busy = false }: Habi
           ) : (
             <SettingsRow
               icon="clock"
-              label="Reminder time"
+              label={t('reminderTimeLabel')}
               value={formatForDisplay(reminderTime)}
               onPress={() => setShowTimePicker(true)}
             />

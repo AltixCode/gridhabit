@@ -2,6 +2,7 @@ import Feather from '@expo/vector-icons/Feather';
 import React from 'react';
 import { View } from 'react-native';
 
+import { t } from '@/i18n';
 import type { Frequency } from '@/logic/frequency';
 import { useTheme, withAlpha } from '@/theme';
 
@@ -13,10 +14,13 @@ interface StreakBadgeProps {
   compact?: boolean;
 }
 
-/** Pluralises the streak unit — weeks for a quota habit, days for the rest. */
+/**
+ * Pluralises the streak unit — weeks for a quota habit, days for the rest —
+ * through the real CLDR plural rule for the active language, not the English
+ * "add an s" rule alone.
+ */
 export function streakLabel(streak: number, frequency: Frequency): string {
-  const unit = frequency.type === 'weekly' ? 'week' : 'day';
-  return `${streak} ${unit}${streak === 1 ? '' : 's'}`;
+  return t(frequency.type === 'weekly' ? 'streakWeeks' : 'streakDays', { count: streak });
 }
 
 export function StreakBadge({ streak, frequency, compact = false }: StreakBadgeProps) {
@@ -26,7 +30,7 @@ export function StreakBadge({ streak, frequency, compact = false }: StreakBadgeP
   return (
     <View
       accessible
-      accessibilityLabel={active ? `Streak: ${streakLabel(streak, frequency)}` : 'No active streak'}
+      accessibilityLabel={active ? t('streakA11y', { label: streakLabel(streak, frequency) }) : t('noActiveStreak')}
       style={{
         flexDirection: 'row',
         alignItems: 'center',

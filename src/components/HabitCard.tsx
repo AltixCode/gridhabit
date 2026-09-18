@@ -4,8 +4,10 @@ import React, { memo, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import type { Habit } from '@/db/types';
+import { t } from '@/i18n';
+import { frequencyLabel } from '@/i18n/frequency';
 import type { DateKey } from '@/logic/dates';
-import { describeFrequency, isHabitDueOn, isNeverDue } from '@/logic/frequency';
+import { isHabitDueOn, isNeverDue } from '@/logic/frequency';
 import { calculateStreak } from '@/logic/streak';
 import { useTheme } from '@/theme';
 
@@ -85,8 +87,8 @@ function HabitCardComponent({ habit, completions, today, onToggleToday }: HabitC
             style={{ flex: 1, gap: 2 }}
             accessible
             accessibilityRole="button"
-            accessibilityLabel={`${habit.name}. ${describeFrequency(habit.frequency)}.`}
-            accessibilityHint="Opens habit details"
+            accessibilityLabel={t('habitCardA11y', { name: habit.name, frequency: frequencyLabel(habit.frequency) })}
+            accessibilityHint={t('opensHabitDetails')}
           >
             <View style={[styles.titleRow, { gap: spacing.sm }]}>
               {habit.icon ? (
@@ -110,8 +112,8 @@ function HabitCardComponent({ habit, completions, today, onToggleToday }: HabitC
               </Text>
             </View>
             <Text variant="caption" tone="muted" numberOfLines={1}>
-              {describeFrequency(habit.frequency)}
-              {!isDueToday ? ' · not due today' : ''}
+              {frequencyLabel(habit.frequency)}
+              {!isDueToday ? ` · ${t('notDueTodaySuffix')}` : ''}
             </Text>
           </View>
 
@@ -122,7 +124,11 @@ function HabitCardComponent({ habit, completions, today, onToggleToday }: HabitC
             color={habit.color}
             dimmed={!isDueToday}
             onToggle={() => onToggleToday(habit.id)}
-            label={`Mark ${habit.name} ${isCompletedToday ? 'incomplete' : 'complete'} for today`}
+            label={
+              isCompletedToday
+                ? t('markIncompleteLabel', { name: habit.name })
+                : t('markCompleteLabel', { name: habit.name })
+            }
           />
         </View>
 

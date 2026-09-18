@@ -77,11 +77,11 @@ describe('HabitForm', () => {
   it('records a selected icon and clears it when tapped again', async () => {
     const { getByLabelText, onSubmit } = await renderForm();
     await fireEvent.changeText(getByLabelText('Name'), 'Read');
-    await fireEvent.press(getByLabelText('book open'));
+    await fireEvent.press(getByLabelText('Book'));
     await fireEvent.press(getByLabelText('Create habit'));
     expect(onSubmit).toHaveBeenLastCalledWith(expect.objectContaining({ icon: 'book-open' }));
 
-    await fireEvent.press(getByLabelText('book open'));
+    await fireEvent.press(getByLabelText('Book'));
     await fireEvent.press(getByLabelText('Create habit'));
     expect(onSubmit).toHaveBeenLastCalledWith(expect.objectContaining({ icon: null }));
   });

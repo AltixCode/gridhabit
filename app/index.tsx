@@ -10,6 +10,7 @@ import { IconButton } from '@/components/ui/IconButton';
 import { Text } from '@/components/ui/Text';
 import { useDb } from '@/hooks/useHabitData';
 import { useToday } from '@/hooks/useToday';
+import { getDeviceLanguage, t } from '@/i18n';
 import { formatDateKeyLong } from '@/logic/dates';
 import { isHabitDueOn, isNeverDue } from '@/logic/frequency';
 import { canAddHabit } from '@/monetization/entitlements';
@@ -88,26 +89,26 @@ export default function HomeScreen() {
             >
               <View style={{ flex: 1 }}>
                 <Text variant="caption" tone="muted">
-                  {formatDateKeyLong(today)}
+                  {formatDateKeyLong(today, getDeviceLanguage())}
                 </Text>
-                <Text variant="display">Today</Text>
+                <Text variant="display">{t('todayLabel')}</Text>
               </View>
               <View style={{ flexDirection: 'row' }}>
                 <IconButton
                   icon="plus"
-                  accessibilityLabel="Add a habit"
+                  accessibilityLabel={t('addHabitA11y')}
                   onPress={handleAdd}
                 />
                 <IconButton
                   icon="settings"
-                  accessibilityLabel="Settings"
+                  accessibilityLabel={t('settingsA11y')}
                   onPress={() => router.push('/settings')}
                 />
               </View>
             </View>
             {dueToday.length > 0 ? (
               <Text variant="callout" tone="muted" accessibilityLiveRegion="polite">
-                {doneToday} of {dueToday.length} done
+                {t('doneOfTotal', { done: doneToday, total: dueToday.length })}
               </Text>
             ) : null}
           </View>
@@ -124,9 +125,9 @@ export default function HomeScreen() {
           status === 'ready' ? (
             <EmptyState
               icon="grid"
-              title="Start your first grid"
-              body="Add a habit and every day you complete it fills in a square. Watch the pattern build."
-              actionLabel="Add a habit"
+              title={t('emptyHomeTitle')}
+              body={t('emptyHomeBody')}
+              actionLabel={t('addHabitA11y')}
               onAction={handleAdd}
             />
           ) : null
