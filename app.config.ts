@@ -12,6 +12,13 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
  * See `.env.example` and `docs/RELEASE.md` for the full variable list.
  */
 
+// The build number the CI job computed, which is `git rev-list --count HEAD`.
+//
+// `||`, never `??`: GitHub Actions maps a missing variable to "", and `??`
+// keeps an empty string while `||` falls back on it. An empty CFBundleVersion
+// is an invalid Info.plist, not a cosmetic problem.
+const BUILD = process.env.APP_BUILD || '1';
+
 /** Google's documented sample IDs — safe to commit, never serve real ads. */
 const TEST_ADMOB_IOS_APP_ID = 'ca-app-pub-3940256099942544~1458002511';
 const TEST_ADMOB_ANDROID_APP_ID = 'ca-app-pub-3940256099942544~3347511713';
@@ -57,8 +64,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     bundleIdentifier: bundleId(),
     supportsTablet: true,
-    // Every build must carry a build number; EAS `autoIncrement` manages it.
-    buildNumber: '1',
+    // Was the literal '1', with a comment saying EAS `autoIncrement` managed
+    // it. Nothing here builds on EAS -- the release pipeline is GitHub Actions,
+    // which computes APP_BUILD and exports it -- so the number never moved and
+    // this app's builds could not be matched back to the commit that produced
+    // them. `attach-verified-build.py` refused it for exactly that reason.
+    buildNumber: BUILD,
     infoPlist: {
       // Shown in the App Tracking Transparency prompt. Required by Apple
       // whenever the IDFA is requested for ad personalisation.
@@ -71,7 +82,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
   android: {
     package: bundleId(),
-    versionCode: 1,
+    versionCode: Number.parseInt(BUILD, 10),
     predictiveBackGestureEnabled: false,
     adaptiveIcon: {
       foregroundImage: './assets/android-icon-foreground.png',
