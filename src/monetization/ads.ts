@@ -14,6 +14,7 @@ import {
   type ConsentInfoLike,
   type ConsentSummary,
 } from '@/monetization/consentPolicy';
+import { isCaptureMode } from '@/monetization/entitlements';
 import { useAdsConsentStore } from '@/store/useAdsConsentStore';
 
 /**
@@ -25,7 +26,6 @@ import { useAdsConsentStore } from '@/store/useAdsConsentStore';
  * first frame — the caller defers this until the user has seen the app once.
  */
 
-/** The Mobile Ads SDK has been initialised. Separate from consent on purpose. */
 let initialised = false;
 let consent: ConsentSummary = { canServeAds: false, offerPrivacyOptions: false };
 let consentGathered = false;
@@ -35,6 +35,7 @@ function applyConsent(next: ConsentSummary): void {
   consentGathered = true;
   // Published to the store as well so the banner re-renders when consent resolves.
   useAdsConsentStore.getState().setConsent(next);
+  if (__DEV__) console.log('[ads] consent', JSON.stringify(next));
 }
 
 /** The consent state the last UMP call reported. */
@@ -72,9 +73,10 @@ export async function showPrivacyOptionsForm(): Promise<boolean> {
   try {
     const info = (await AdsConsent.showPrivacyOptionsForm()) as unknown as ConsentInfoLike;
     applyConsent(summariseConsent(info));
-    // The user may have just granted consent for the first time. If the SDK was
-    // never brought up, do it now — otherwise the banner would start rendering
-    // against an uninitialised SDK and never fill.
+    // The user may have just opted in for the first time. This is the only path
+    // by which consent changes mid-session, so if nothing starts the SDK here
+    // nothing ever will -- the banner renders against an uninitialised SDK and
+    // silently never fills.
     if (consent.canServeAds) await initializeAds();
     return true;
   } catch {
@@ -85,6 +87,10 @@ export async function showPrivacyOptionsForm(): Promise<boolean> {
 /** Requests ATT on iOS. Returns true when the user granted tracking. */
 export async function requestTrackingPermission(): Promise<boolean> {
   if (Platform.OS !== 'ios') return true;
+  // simctl has no privacy-grant service for ATT (unlike camera/photos/microphone), so this
+  // system prompt is otherwise unavoidable during automated screenshot capture -- it covers
+  // the app full-screen and discards every frame taken while it's up.
+  if (isCaptureMode()) return false;
   try {
     const current = await getTrackingPermissionsAsync();
     if (!current.canAskAgain) return current.granted;
@@ -98,21 +104,19 @@ export async function requestTrackingPermission(): Promise<boolean> {
 export async function initializeAds(): Promise<void> {
   if (initialised) return;
   try {
-    // Gate on "have we asked", not on "did they say yes". Gating on the answer
-    // re-presents the consent form on every entry point after a refusal, which
-    // is both a worse experience and the opposite of what a refusal means.
-    if (!consentGathered) {
-      applyConsent(await gatherConsent());
-    }
+    // Only gather if nothing has yet -- `bootstrapAds` does it first so that ATT can be
+    // ordered after it, and gathering twice re-presents the form.
+    if (!consentGathered) applyConsent(await gatherConsent());
     if (!consent.canServeAds) {
-      // No consent, so nothing is initialised and no banner renders. Crucially
-      // `initialised` stays false: if the user later opts in through the privacy
-      // options form, `initializeAds` must be able to run for real. Marking it
-      // done here would leave the SDK permanently uninitialised and every
-      // subsequent banner unfillable — silently, because the component renders
-      // perfectly well with nothing behind it.
+      // Nothing is initialised and no banner renders. `initialised` deliberately
+      // stays false: a refusal is a decision about consent, not a permanent
+      // decision about the SDK, and the user can still opt in through the
+      // privacy options form. Re-presenting the form is prevented by
+      // `consentGathered`; using `initialised` for that job as well is what
+      // left the SDK unstartable for the rest of the session.
       return;
     }
+    initialised = true;
     await mobileAds().setRequestConfiguration({
       // The app is rated 4+ but is not directed at children; G-rated ad content
       // keeps it comfortably inside both stores' rating policies.
@@ -121,10 +125,8 @@ export async function initializeAds(): Promise<void> {
       tagForUnderAgeOfConsent: false,
     });
     await mobileAds().initialize();
-    initialised = true;
   } catch {
-    // A failed ads init must never block the app. Banners simply do not render,
-    // and a later attempt can retry.
+    // A failed ads init must never block the app. Banners simply do not render.
     initialised = false;
   }
 }
@@ -134,30 +136,29 @@ export async function initializeAds(): Promise<void> {
  * Safe to call more than once.
  */
 export async function bootstrapAds(): Promise<void> {
-  // Order matters, and it is UMP consent -> ATT -> SDK.
+  // Order matters, and this used to get it backwards: it asked for tracking first and
+  // gathered UMP consent second, so on a real device the ATT alert appeared *stacked on top
+  // of* the still-open consent form. Two modals at once, and the tracking decision made
+  // before the user had been told what the ads are.
   //
-  // Google's guidance is to resolve UMP consent before requesting ATT: the
-  // consent form is what establishes a legal basis at all, and on iOS the ATT
-  // prompt is the narrower, platform-specific question that follows it. Running
-  // ATT first also asks a user to allow tracking for ads they may then refuse
-  // outright, which is worse UX for no gain.
+  // The order now is consent, then ATT, then the SDK:
   //
-  // `initializeAds` gathers consent itself and only starts the SDK when consent
-  // allows it, so ATT is requested in between.
-  // This runs from an effect that re-runs whenever premium or readiness
-  // changes, so it must be idempotent. gatherAndApplyConsent stays an
-  // unconditional entry point for the places that mean "ask again".
-  const summary = consentGathered ? consent : await gatherAndApplyConsent();
-  // Nobody is asked to allow tracking for ads they will never be shown. ATT is
-  // the narrower question that only makes sense once consent has established
-  // there will be advertising at all.
-  if (summary.canServeAds) await requestTrackingPermission();
+  //   - consent first because it is what decides whether there will be ads at all, and
+  //     Google's own guidance puts the UMP flow ahead of ATT;
+  //   - ATT only when consent allows ads, so nobody is asked for tracking permission for
+  //     ads they will never see;
+  //   - the SDK last, because an ad request that goes out before consent is recorded is the
+  //     policy breach that gets an AdMob account suspended -- and the account is shared by
+  //     every app in the portfolio.
+  // Idempotent: several screens call this, and re-gathering would re-present the
+  // consent form each time.
+  if (!consentGathered) applyConsent(await gatherConsent());
+  if (!consent.canServeAds) {
+    // Fail closed. `consentGathered` is what stops the form being re-presented
+    // on every screen; latching `initialised` here would also make a later
+    // opt-in unable to start the SDK.
+    return;
+  }
+  await requestTrackingPermission();
   await initializeAds();
-}
-
-/** Resolves UMP consent and publishes it, without touching the ads SDK. */
-export async function gatherAndApplyConsent(): Promise<ConsentSummary> {
-  const next = await gatherConsent();
-  applyConsent(next);
-  return next;
 }

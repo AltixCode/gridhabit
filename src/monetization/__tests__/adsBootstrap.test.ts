@@ -51,6 +51,19 @@ async function trace(
         privacyOptionsRequirementStatus: 'REQUIRED',
       };
     });
+    AdsConsent.showPrivacyOptionsForm.mockImplementation(async () => {
+      calls.push('showPrivacyOptionsForm');
+      return {
+        status: 'OBTAINED',
+        canRequestAds: true,
+        privacyOptionsRequirementStatus: 'REQUIRED',
+      };
+    });
+    const mobileAds = require('react-native-google-mobile-ads').default;
+    mobileAds().initialize.mockImplementation(async () => {
+      calls.push('initialize');
+      return [];
+    });
     tracking.getTrackingPermissionsAsync.mockResolvedValue({ granted: false, canAskAgain: true });
     tracking.requestTrackingPermissionsAsync.mockImplementation(async () => {
       calls.push('requestTracking');
@@ -66,9 +79,12 @@ async function trace(
 describe('bootstrapAds', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('gathers UMP consent before it asks for tracking permission', async () => {
+  it('gathers UMP consent, then asks for tracking, then starts the SDK', async () => {
+    // The whole order in one assertion. It used to stop at 'requestTracking'
+    // because `mobileAds()` handed out a fresh mock per call, so the SDK's own
+    // initialisation was invisible to every test in this file.
     const calls = await trace({ canRequestAds: true }, (ads) => ads.bootstrapAds());
-    expect(calls).toEqual(['gatherConsent', 'requestTracking']);
+    expect(calls).toEqual(['gatherConsent', 'requestTracking', 'initialize']);
   });
 
   it('never asks for tracking when consent does not allow ads', async () => {
@@ -86,6 +102,24 @@ describe('bootstrapAds', () => {
     expect(calls.filter((call) => call === 'gatherConsent')).toHaveLength(1);
   });
 
+  /**
+   * A refusal is for this session's *consent*, not for the SDK forever.
+   *
+   * Refusing set `initialised = true` as a guard against re-presenting the form
+   * on every screen. But `initializeAds` returns immediately when that flag is
+   * set, so once the user opted back in through the privacy options form there
+   * was no path left that could start the SDK. Every banner then rendered
+   * against an uninitialised SDK and silently never filled -- no error, no
+   * crash, just no ads for the rest of the session.
+   */
+  it('starts the SDK when consent is granted after a refusal', async () => {
+    const calls = await trace({ canRequestAds: false }, async (ads) => {
+      await ads.bootstrapAds();
+      await ads.showPrivacyOptionsForm();
+    });
+    expect(calls).toContain('initialize');
+  });
+
   it('serves no ads at all when the consent call throws', async () => {
     let served: boolean | null = null;
     const calls = await trace(new Error('no network'), async (ads) => {
@@ -95,5 +129,34 @@ describe('bootstrapAds', () => {
     // Fail closed: a refusal is a decision, never a fallback to serving.
     expect(served).toBe(false);
     expect(calls).toEqual(['gatherConsent']);
+  });
+});
+
+/**
+ * simctl has no privacy-grant service for ATT (unlike camera/photos/microphone), so the
+ * system prompt is unavoidable during automated screenshot capture -- it covers the app
+ * full-screen and collapses the accessibility tree, discarding every frame taken while
+ * it's up. See entitlements.ts's isCaptureMode for why __DEV__ is what makes this safe to
+ * skip: it is inert in anything that ships, no matter how the environment is set.
+ */
+describe('capture mode', () => {
+  const realDev = (globalThis as { __DEV__?: boolean }).__DEV__;
+  afterEach(() => {
+    (globalThis as { __DEV__?: boolean }).__DEV__ = realDev;
+    delete process.env.EXPO_PUBLIC_CAPTURE_MODE;
+  });
+
+  it('never raises the ATT prompt during a capture build', async () => {
+    (globalThis as { __DEV__?: boolean }).__DEV__ = true;
+    process.env.EXPO_PUBLIC_CAPTURE_MODE = '1';
+    const calls = await trace({ canRequestAds: true }, (ads) => ads.bootstrapAds());
+    expect(calls).not.toContain('requestTracking');
+  });
+
+  it('still asks for tracking in a release build even if the flag leaks in', async () => {
+    (globalThis as { __DEV__?: boolean }).__DEV__ = false;
+    process.env.EXPO_PUBLIC_CAPTURE_MODE = '1';
+    const calls = await trace({ canRequestAds: true }, (ads) => ads.bootstrapAds());
+    expect(calls).toContain('requestTracking');
   });
 });
