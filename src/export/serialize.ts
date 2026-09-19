@@ -1,6 +1,6 @@
 import type { Habit } from '@/db/types';
+import { frequencyLabel } from '@/i18n/frequency';
 import type { DateKey } from '@/logic/dates';
-import { describeFrequency } from '@/logic/frequency';
 
 /**
  * Export serializers.
@@ -49,7 +49,7 @@ export function toCsv({ habits, completions }: ExportInput): string {
     const prefix = [
       csvField(habit.id),
       csvField(habit.name),
-      csvField(describeFrequency(habit.frequency)),
+      csvField(frequencyLabel(habit.frequency)),
       csvField(habit.color),
       String(habit.archived),
     ].join(',');

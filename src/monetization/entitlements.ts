@@ -90,6 +90,32 @@ export function paywallReasonFor(reason: PaywallReason): string {
   }
 }
 
+/**
+ * The `src/i18n` key for `reason`, kept in step with `paywallReasonFor` above
+ * by `src/i18n/__tests__/entitlements.test.ts`, which renders each key and
+ * checks it against the same content pattern `entitlements.test.ts` checks
+ * `paywallReasonFor`'s English string against.
+ */
+export type PaywallReasonKey =
+  | 'paywallReasonHabitLimit'
+  | 'paywallReasonRemoveAds'
+  | 'paywallReasonExport'
+  | 'paywallReasonGeneric';
+
+export function paywallReasonKeyFor(reason: PaywallReason): PaywallReasonKey {
+  switch (reason) {
+    case 'habit-limit':
+      return 'paywallReasonHabitLimit';
+    case 'remove-ads':
+      return 'paywallReasonRemoveAds';
+    case 'export':
+      return 'paywallReasonExport';
+    case 'generic':
+    default:
+      return 'paywallReasonGeneric';
+  }
+}
+
 /* ------------------------------------------------------------------- plans */
 
 /** The subset of a RevenueCat package the UI actually needs. */
@@ -109,15 +135,21 @@ export interface PlanSummary {
   savingsPercent: number | null;
 }
 
-function isLifetimeIdentifier(identifier: string): boolean {
+// Exported (not just used by `summarizePlan` below) so a UI-layer adapter can
+// pick the same plan bucket without duplicating the regex, while still
+// building its own translated copy -- this file stays free of `react`,
+// `react-native` and `expo-*` imports, so `summarizePlan`'s own English
+// strings (guarded by `entitlements.test.ts`'s content-matching assertions)
+// are unaffected by adding translated copy elsewhere.
+export function isLifetimeIdentifier(identifier: string): boolean {
   return /lifetime/i.test(identifier);
 }
 
-function isAnnualIdentifier(identifier: string, periodUnit: string | null): boolean {
+export function isAnnualIdentifier(identifier: string, periodUnit: string | null): boolean {
   return periodUnit === 'YEAR' || /annual|yearly/i.test(identifier);
 }
 
-function isMonthlyIdentifier(identifier: string, periodUnit: string | null): boolean {
+export function isMonthlyIdentifier(identifier: string, periodUnit: string | null): boolean {
   return periodUnit === 'MONTH' || /monthly/i.test(identifier);
 }
 

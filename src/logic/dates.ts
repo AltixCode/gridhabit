@@ -23,12 +23,6 @@ export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const MS_PER_DAY = 86_400_000;
 
-export const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
-export const MONTH_LABELS = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-] as const;
-
 function pad(value: number): string {
   return String(value).padStart(2, '0');
 }
@@ -131,8 +125,21 @@ export function eachDayInRange(from: DateKey, to: DateKey): DateKey[] {
   return out;
 }
 
-/** A human label such as `Sun, Sep 13, 2026`. */
-export function formatDateKeyLong(key: DateKey): string {
+/**
+ * A human label such as `Sun, Sep 13, 2026`, in `locale`.
+ *
+ * Built from `Intl.DateTimeFormat` rather than a hand-translated weekday/month
+ * array: `Intl` is a JS global, not an `expo-*` import, so this stays usable
+ * from a file that -- like every file in `src/logic/` -- imports nothing from
+ * `react`, `react-native` or `expo-*`. The default keeps every existing call
+ * site's English output unchanged.
+ */
+export function formatDateKeyLong(key: DateKey, locale = 'en'): string {
   const date = parseDateKey(key);
-  return `${WEEKDAY_LABELS[date.getDay()]}, ${MONTH_LABELS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+  return new Intl.DateTimeFormat(locale, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(date);
 }

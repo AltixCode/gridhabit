@@ -7,6 +7,7 @@ import { Divider, SettingsGroup, SettingsRow } from '@/components/SettingsRow';
 import { Screen } from '@/components/ui/Screen';
 import { useDb } from '@/hooks/useHabitData';
 import { useToday } from '@/hooks/useToday';
+import { t } from '@/i18n';
 import { useShallow } from 'zustand/react/shallow';
 
 import { selectArchivedHabits, useHabitsStore } from '@/store/useHabitsStore';
@@ -33,8 +34,8 @@ export default function ArchiveScreen() {
       <Screen>
         <EmptyState
           icon="archive"
-          title="Nothing archived"
-          body="Archiving a habit hides it from Today while keeping every square you have already filled."
+          title={t('archiveEmptyTitle')}
+          body={t('archiveEmptyBody')}
         />
       </Screen>
     );
@@ -48,7 +49,7 @@ export default function ArchiveScreen() {
             {index > 0 ? <Divider /> : null}
             <SettingsRow
               label={habit.name}
-              description="Tap to restore to Today"
+              description={t('tapToRestoreDesc')}
               onPress={() => restore(habit.id)}
               accessory={
                 <MiniGrid

@@ -6,6 +6,7 @@ import { HabitForm, type HabitFormValues } from '@/components/HabitForm';
 import { Screen } from '@/components/ui/Screen';
 import { useDb } from '@/hooks/useHabitData';
 import { useToday } from '@/hooks/useToday';
+import { t } from '@/i18n';
 import { canAddHabit } from '@/monetization/entitlements';
 import { syncHabitReminders } from '@/notifications/reminders';
 import { selectActiveHabitCount, useHabitsStore } from '@/store/useHabitsStore';
@@ -41,7 +42,7 @@ export default function NewHabitScreen() {
         }
         router.back();
       } catch (error) {
-        Alert.alert('Could not save habit', (error as Error).message);
+        Alert.alert(t('couldNotSaveHabitTitle'), (error as Error).message);
       } finally {
         setBusy(false);
       }
@@ -51,7 +52,7 @@ export default function NewHabitScreen() {
 
   return (
     <Screen scroll contentContainerStyle={{ paddingTop: spacing.base }}>
-      <HabitForm submitLabel="Create habit" onSubmit={handleSubmit} busy={busy} />
+      <HabitForm submitLabel={t('createHabitCta')} onSubmit={handleSubmit} busy={busy} />
     </Screen>
   );
 }
