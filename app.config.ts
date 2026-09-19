@@ -142,6 +142,18 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         delayAppMeasurementInit: true,
       },
     ],
+    [
+      'expo-build-properties',
+      {
+        android: {
+          // R8 shrinking + obfuscation for release builds. Without this, Play
+          // Console's pre-launch report flags the app under 25% obfuscation
+          // and warns it may lose visibility/publishing eligibility.
+          enableProguardInReleaseBuilds: true,
+          enableShrinkResourcesInReleaseBuilds: true,
+        },
+      },
+    ],
   ],
 
   experiments: { typedRoutes: true, reactCompiler: true },

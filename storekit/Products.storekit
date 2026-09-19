@@ -1,0 +1,35 @@
+{
+  "identifier": "3044B122-D96D-4AB3-AE5A-3370DC3456B1",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "4.99",
+      "familyShareable": false,
+      "internalID": "F92CA801-7F68-446D-BBBB-39749A83C5A4",
+      "localizations": [
+        {
+          "description": "gridhabit remove ads lifetime unlock",
+          "displayName": "gridhabit remove ads",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.altixcode.gridhabit.removeads",
+      "referenceName": "gridhabit remove ads",
+      "type": "NonConsumable"
+    }
+  ],
+  "settings": {
+    "_applicationInternalID": "",
+    "_developerTeamID": "",
+    "_failTransactionsEnabled": false,
+    "_lastSynchronizedDate": 0,
+    "_locale": "en_US",
+    "_storefront": "USA",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 4,
+    "minor": 0
+  }
+}
