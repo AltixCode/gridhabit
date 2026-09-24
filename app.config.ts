@@ -99,6 +99,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
 
   plugins: [
+    // RevenueCat's Android SDK pulls in Amazon Appstore support unconditionally
+    // (react-native-purchases -> purchases-hybrid-common -> purchases-store-amazon ->
+    // com.amazon.device:amazon-appstore-sdk), which made R8 emit thousands of
+    // warnings during release minification and crash minifyReleaseWithR8 with
+    // OutOfMemoryError: Metaspace -- see the plugin file for the full trace.
+    './plugins/withExcludeAmazonAppstore',
+
     'expo-router',
     'expo-sqlite',
     // iOS 26+ refuses to launch an app that still drives its window from the app delegate:
