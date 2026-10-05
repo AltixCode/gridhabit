@@ -1,15 +1,19 @@
-import * as Haptics from 'expo-haptics';
-import React, { memo, useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import * as Haptics from "expo-haptics";
+import React, { memo, useMemo } from "react";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
-import { getDeviceLanguage, t } from '@/i18n';
-import { weekdayNarrow } from '@/i18n/frequency';
-import { formatDateKeyLong, type DateKey } from '@/logic/dates';
-import type { Frequency } from '@/logic/frequency';
-import { buildContributionGrid, gridMonthLabels, type GridCell } from '@/logic/grid';
-import { mix, useTheme } from '@/theme';
+import { getDeviceLanguage, t } from "@/i18n";
+import { weekdayNarrow } from "@/i18n/frequency";
+import { formatDateKeyLong, type DateKey } from "@/logic/dates";
+import type { Frequency } from "@/logic/frequency";
+import {
+  buildContributionGrid,
+  gridMonthLabels,
+  type GridCell,
+} from "@/logic/grid";
+import { mix, useTheme } from "@/theme";
 
-import { Text } from './ui/Text';
+import { Text } from "./ui/Text";
 
 export interface ContributionGridProps {
   completions: readonly DateKey[];
@@ -54,7 +58,13 @@ function ContributionGridComponent({
   const { colors, radius, spacing } = useTheme();
 
   const grid = useMemo(
-    () => buildContributionGrid(completions, { today, createdAt, frequency, weeks }),
+    () =>
+      buildContributionGrid(completions, {
+        today,
+        createdAt,
+        frequency,
+        weeks,
+      }),
     [completions, today, createdAt, frequency, weeks],
   );
   const monthLabels = useMemo(
@@ -66,22 +76,55 @@ function ContributionGridComponent({
   const cellRadius = Math.max(2, Math.round(cellSize * 0.28));
 
   const fillFor = (cell: GridCell): string => {
-    if (cell.isBeforeStart || cell.isFuture) return 'transparent';
+    if (cell.isBeforeStart || cell.isFuture) return "transparent";
     if (cell.completed) return mix(color, colors.surface, cell.intensity);
     if (cell.isMissed) return colors.gridMissed;
     return colors.gridEmpty;
   };
 
-  const body = (
-    <View style={styles.row}>
-      {showLabels ? (
-        <View style={{ marginRight: gap * 2, paddingTop: monthLabels.length ? 18 : 0 }}>
-          {([0, 1, 2, 3, 4, 5, 6] as const).map((index) => (
-            <View key={index} style={{ height: cellSize, marginBottom: gap, justifyContent: 'center' }}>
-              {/* GitHub labels alternate rows to avoid a cramped axis. */}
-              {index % 2 === 1 ? (
-                <Text variant="micro" tone="faint">
-                  {weekdayNarrow(index)}
+  // Fixed outside the horizontal scroller: the grid auto-scrolls to the most
+  // recent week on mount (see below), which would carry this column off the
+  // left edge with it if it scrolled along, making the labels it exists to
+  // provide permanently invisible on first open.
+  const labelColumn = showLabels ? (
+    <View
+      style={{
+        marginRight: gap * 2,
+        paddingTop: monthLabels.length ? 18 : 0,
+      }}
+    >
+      {([0, 1, 2, 3, 4, 5, 6] as const).map((index) => (
+        <View
+          key={index}
+          style={{
+            height: cellSize,
+            marginBottom: gap,
+            justifyContent: "center",
+          }}
+        >
+          {/* GitHub labels alternate rows to avoid a cramped axis. */}
+          {index % 2 === 1 ? (
+            // Tablet scaling grows `micro`'s lineHeight past the grid's own
+            // cellSize (fixed, not tablet-scaled), which clipped the glyph
+            // against this row's height. Pinned to the row instead.
+            <Text variant="micro" tone="faint" style={{ lineHeight: cellSize }}>
+              {weekdayNarrow(index)}
+            </Text>
+          ) : null}
+        </View>
+      ))}
+    </View>
+  ) : null;
+
+  const scrollingGrid = (
+    <View>
+      {monthLabels.length ? (
+        <View style={[styles.row, { height: 18 }]}>
+          {monthLabels.map((label, index) => (
+            <View key={`${label}-${index}`} style={{ width: columnWidth }}>
+              {label ? (
+                <Text variant="micro" tone="faint" numberOfLines={1}>
+                  {label}
                 </Text>
               ) : null}
             </View>
@@ -89,88 +132,80 @@ function ContributionGridComponent({
         </View>
       ) : null}
 
-      <View>
-        {monthLabels.length ? (
-          <View style={[styles.row, { height: 18 }]}>
-            {monthLabels.map((label, index) => (
-              <View key={`${label}-${index}`} style={{ width: columnWidth }}>
-                {label ? (
-                  <Text variant="micro" tone="faint" numberOfLines={1}>
-                    {label}
-                  </Text>
-                ) : null}
-              </View>
-            ))}
+      <View style={styles.row}>
+        {grid.map((column) => (
+          <View key={column[0]?.date} style={{ marginRight: gap }}>
+            {column.map((cell) => {
+              const interactive =
+                Boolean(onToggleDay) && !cell.isFuture && !cell.isBeforeStart;
+              const fill = fillFor(cell);
+              return (
+                <Pressable
+                  key={cell.date}
+                  disabled={!interactive}
+                  onPress={() => {
+                    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onToggleDay?.(cell.date);
+                  }}
+                  // The 12pt square is below the 44pt minimum by design — it is
+                  // a dense data view. hitSlop restores a usable touch area.
+                  hitSlop={Math.max(0, Math.round((44 - cellSize) / 2))}
+                  accessibilityRole={interactive ? "button" : "image"}
+                  accessibilityLabel={t("gridCellA11y", {
+                    date: formatDateKeyLong(cell.date, getDeviceLanguage()),
+                    state: t(
+                      cell.completed
+                        ? "cellStateCompleted"
+                        : cell.isMissed
+                          ? "cellStateMissed"
+                          : "cellStateNotDue",
+                    ),
+                  })}
+                  accessibilityState={{ selected: cell.completed }}
+                  style={({ pressed }) => ({
+                    width: cellSize,
+                    height: cellSize,
+                    marginBottom: gap,
+                    borderRadius: cellRadius,
+                    backgroundColor: fill,
+                    opacity: pressed ? 0.55 : 1,
+                    borderWidth: cell.isToday ? 1.5 : 0,
+                    borderColor: cell.isToday ? colors.text : "transparent",
+                  })}
+                />
+              );
+            })}
           </View>
-        ) : null}
-
-        <View style={styles.row}>
-          {grid.map((column) => (
-            <View key={column[0]?.date} style={{ marginRight: gap }}>
-              {column.map((cell) => {
-                const interactive = Boolean(onToggleDay) && !cell.isFuture && !cell.isBeforeStart;
-                const fill = fillFor(cell);
-                return (
-                  <Pressable
-                    key={cell.date}
-                    disabled={!interactive}
-                    onPress={() => {
-                      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      onToggleDay?.(cell.date);
-                    }}
-                    // The 12pt square is below the 44pt minimum by design — it is
-                    // a dense data view. hitSlop restores a usable touch area.
-                    hitSlop={Math.max(0, Math.round((44 - cellSize) / 2))}
-                    accessibilityRole={interactive ? 'button' : 'image'}
-                    accessibilityLabel={t('gridCellA11y', {
-                      date: formatDateKeyLong(cell.date, getDeviceLanguage()),
-                      state: t(
-                        cell.completed
-                          ? 'cellStateCompleted'
-                          : cell.isMissed
-                            ? 'cellStateMissed'
-                            : 'cellStateNotDue',
-                      ),
-                    })}
-                    accessibilityState={{ selected: cell.completed }}
-                    style={({ pressed }) => ({
-                      width: cellSize,
-                      height: cellSize,
-                      marginBottom: gap,
-                      borderRadius: cellRadius,
-                      backgroundColor: fill,
-                      opacity: pressed ? 0.55 : 1,
-                      borderWidth: cell.isToday ? 1.5 : 0,
-                      borderColor: cell.isToday ? colors.text : 'transparent',
-                    })}
-                  />
-                );
-              })}
-            </View>
-          ))}
-        </View>
+        ))}
       </View>
     </View>
   );
 
-  if (!scrollable) return body;
-
-  return (
+  const scroller = !scrollable ? (
+    scrollingGrid
+  ) : (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={{ paddingRight: spacing.base }}
       // Start at the most recent week; history is to the left, as on GitHub.
       ref={(ref) => ref?.scrollToEnd({ animated: false })}
-      style={{ borderRadius: radius.sm }}
+      style={{ borderRadius: radius.sm, flexShrink: 1 }}
     >
-      {body}
+      {scrollingGrid}
     </ScrollView>
+  );
+
+  return (
+    <View style={styles.row}>
+      {labelColumn}
+      {scroller}
+    </View>
   );
 }
 
 export const ContributionGrid = memo(ContributionGridComponent);
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row' },
+  row: { flexDirection: "row" },
 });
